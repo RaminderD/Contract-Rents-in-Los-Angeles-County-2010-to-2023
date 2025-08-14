@@ -710,4 +710,4 @@ def update_plot(selected_place, selected_tract):
 
 # ------------ EXECUTE THE APP ------------ #
 if __name__ == "__main__":
-    app.run(debug=False, jupyter_mode="external")
+    app.run(debug=False)
