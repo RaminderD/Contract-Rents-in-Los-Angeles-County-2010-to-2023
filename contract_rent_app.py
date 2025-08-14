@@ -32,7 +32,7 @@ import os
 # ------------ DATA COLLECTION ------------ #
 
 # Specify your main folder path here
-main_folder = "/home/RaminderD/Contract-Rents-in-Los-Angeles-County-2010-to-2023-/"
+main_folder = "/home/RaminderD/Contract-Rents-in-Los-Angeles-County-2010-to-2023/"
 
 assets_path = main_folder + "assets/"
 
