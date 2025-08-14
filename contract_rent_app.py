@@ -452,6 +452,7 @@ GitHub — <u style='color:#800000;'><a href=""> TO BE UPDATED </a></u>
 # ------------ APP ------------ #
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SIMPLEX])
+server = app.server
 
 # ------------ Initialization ------------ #
 masterfile_place_year_dict = places_year_dict('contract_rent_masterfile')
