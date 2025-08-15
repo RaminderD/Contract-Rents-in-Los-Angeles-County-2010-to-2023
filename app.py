@@ -135,7 +135,7 @@ Thank you to <u style='color:#800000;'><a href="https://www.wearelbre.org/">Long
 
 ### <b style='color:#800000;'>Author Information</b>
 Raminder Singh Dubb <br>
-GitHub — <u style='color:#800000;'><a href=""> TO BE UPDATED </a></u>
+GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County">https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County</a></u>
 
 © 2025 Raminder Singh Dubb
 """
