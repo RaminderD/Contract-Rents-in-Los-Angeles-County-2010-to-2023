@@ -2,9 +2,8 @@
 	--background-color: #F7F2EE;
 
 body {
-	background-color: var(--background-color);
-	background: var(--background-color);
-	color: var(--text-color);
+	background-color: #F7F2EE;
+	background: #F7F2EE;
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
