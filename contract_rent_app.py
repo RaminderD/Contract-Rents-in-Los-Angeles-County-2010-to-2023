@@ -596,7 +596,7 @@ app.layout = dbc.Container([
 #
 # ----------------------------------- #
 
-
+"""
 # ------------ Dropdowns ------------ #
 @app.callback(
     Output('year-dropdown', 'options'),
@@ -689,8 +689,7 @@ def update_plot(selected_place, selected_tract):
     else:
         fig = census_tract_plot(selected_place, selected_tract)
         return fig
-
-
+"""
 
 
 # ------------ EXECUTE THE APP ------------ #
