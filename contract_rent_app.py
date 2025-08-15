@@ -23,9 +23,9 @@ import os
 # Specify your main folder path here
 main_folder = "/home/ramindersinghdubb/Contract-Rents-in-LA-County/"
 
-assets_path = main_folder + "assets/"
+assets_path = "./assets/"
 
-data_path = main_folder + "masterfiles/"
+data_path = "./masterfiles/"
 
 
 # Collect and store the mastergeometries into a dictionary whose keys represent years
