@@ -22,9 +22,9 @@ import os
 
 main_folder = "/home/ramindersinghdubb/Contract-Rents-in-LA-County"
 
-assets_path = os.path.join(os.path.dirname(__file__), 'assets/')
+assets_path = os.path.join(main_folder, 'assets/')
 
-data_path = os.path.join(os.path.dirname(__file__), 'masterfiles/')
+data_path = os.path.join(main_folder, 'masterfiles/')
 
 # Collect and store the mastergeometries into a dictionary whose keys represent years
 geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent_mastergeometry' in file]
