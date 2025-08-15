@@ -31,7 +31,7 @@ geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent
 geometries_dict = dict()
 for geometry in geometries:
     file_path = assets_path + geometry
-    gdf = gpd.read_file(file_path, driver='GeoJSON', encoding='utf-8')
+    gdf = gpd.read_file(file_path, driver='GeoJSON')
     year = gdf.at[0, 'YEAR']
     geometries_dict[year] = gdf
 
@@ -41,7 +41,7 @@ years = list(geometries_dict.keys())
 
 for year in years:
     map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
-    gdf = gpd.read_file(map_path, driver='GeoJSON', encoding='utf-8')
+    gdf = gpd.read_file(map_path, driver='GeoJSON')
 
     dummy_dict = dict()
     places = gdf['PLACE'].unique().tolist()
