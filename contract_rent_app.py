@@ -20,8 +20,6 @@ import os
 
 # ------------ DATA COLLECTION ------------ #
 
-main_folder = "/home/ramindersinghdubb/Contract-Rents-in-LA-County"
-
 assets_path = "assets/"
 
 data_path = "mainfiles/"
