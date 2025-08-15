@@ -20,11 +20,11 @@ import os
 
 # ------------ DATA COLLECTION ------------ #
 
-main_folder = os.getcwd()
+main_folder = "/home/ramindersinghdubb/Contract-Rents-in-LA-County"
 
-assets_path = main_folder + "/assets/"
+assets_path = os.path.join(main_folder, "assets")
 
-data_path = main_folder + "/masterfiles/"
+data_path = os.path.join(main_folder, "mainfiles")
 
 
 # Collect and store the mastergeometries into a dictionary whose keys represent years
@@ -32,7 +32,7 @@ geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent
 geometries_dict = dict()
 for geometry in geometries:
     file_path = assets_path + geometry
-    gdf = gpd.read_file(file_path)
+    gdf = gpd.read_file(file_path, encoding='utf-8')
     year = gdf.at[0, 'YEAR']
     geometries_dict[year] = gdf
 
