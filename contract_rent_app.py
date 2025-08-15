@@ -20,12 +20,11 @@ import os
 
 # ------------ DATA COLLECTION ------------ #
 
-# Specify your main folder path here
-main_folder = "/home/ramindersinghdubb/Contract-Rents-in-LA-County/"
+main_folder = os.getcwd()
 
-assets_path = "assets/"
+assets_path = main_folder + "/assets/"
 
-data_path = "masterfiles/"
+data_path = main_folder + "/masterfiles/"
 
 
 # Collect and store the mastergeometries into a dictionary whose keys represent years
