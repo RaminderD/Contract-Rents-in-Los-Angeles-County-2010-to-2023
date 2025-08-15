@@ -282,4 +282,4 @@ app.layout = dbc.Container([
 if __name__ == '__main__':
     app.run(debug=False)
 
-app.css.append_css({"external_url": "https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/style.css"})
+#app.css.append_css({"external_url": "https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/style.css"})
