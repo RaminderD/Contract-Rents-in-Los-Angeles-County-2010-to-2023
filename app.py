@@ -22,22 +22,18 @@ data_path = "masterfiles/"
 # Collect and store the mastergeometries into a dictionary whose keys represent years
 geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent_mastergeometry' in file]
 geometries_dict = dict()
-for geometry in geometries:
-    file_path = assets_path + geometry
-    with open(file_path, 'r', encoding='utf-8') as f:
-        data = f.read()
-        gdf = gpd.read_file(data)
-        year = gdf.at[0, 'YEAR']
-        geometries_dict[year] = gdf
+years = range(2010, 2024)
+for year in years:
+    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/contract_rent_mastergeometry_{year}.json'
+    gdf = gpd.read_file(url_path)
+    geometries_dict[year] = gdf
 
 # Create a stratified dictionary for mastergeometries, indexed by year and place in that order
 stratified_map_dict = dict()
 years = list(geometries_dict.keys())
 for year in years:
-    map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
-    with open(map_path, 'r', encoding='utf-8') as f:
-        data = f.read()
-        gdf = gpd.read_file(map_path)
+    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/contract_rent_mastergeometry_{year}.json'
+    gdf = gpd.read_file(url_path)
 
     dummy_dict = dict()
     places = gdf['PLACE'].unique().tolist()
