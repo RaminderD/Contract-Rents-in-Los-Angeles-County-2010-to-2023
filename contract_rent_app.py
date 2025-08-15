@@ -349,7 +349,7 @@ Median Contract Rent: <br> <b style='color:#800000; font-size:14px;'>%{customdat
                       uirevision       = True,
                       paper_bgcolor    = '#FEF9F3',
                       plot_bgcolor     = '#FEF9F3',
-                      title = {'text': f'Median Contract Rents, {tract_data['YEAR'].min()} to {tract_data['YEAR'].max()}',
+                      title = {'text': f'Median Contract Rents, {tract_data["YEAR"].min()} to {tract_data["YEAR"].max()}',
                               },
                       xaxis = {'title_text': 'Year',
                                'showgrid': False,
