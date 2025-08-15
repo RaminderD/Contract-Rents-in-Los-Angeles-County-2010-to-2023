@@ -16,32 +16,8 @@ import os
 
 # ------------ DATA COLLECTION ------------ #
 assets_path = "assets/"
+
 data_path = "masterfiles/"
-
-# Collect and store the mastergeometries into a dictionary whose keys represent years
-geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent_mastergeometry' in file]
-geometries_dict = dict()
-for geometry in geometries:
-    file_path = assets_path + geometry
-    gdf = gpd.read_file(file_path)
-    year = gdf.at[0, 'YEAR']
-    geometries_dict[year] = gdf
-
-# Create a stratified dictionary for mastergeometries, indexed by year and place in that order
-stratified_map_dict = dict()
-years = list(geometries_dict.keys())
-
-for year in years:
-    map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
-    gdf = gpd.read_file(map_path)
-
-    dummy_dict = dict()
-    places = gdf['PLACE'].unique().tolist()
-    for place in places:
-        mask = gdf['PLACE'] == place
-        dummy_dict[place] = gdf[mask]
-
-    stratified_map_dict[year] = deepcopy(dummy_dict)
 
 
 
