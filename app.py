@@ -138,7 +138,7 @@ and 75th percentile contract rents for the selected census tract.
 <hr style="height:2px; border-width:0; color:#212122; background-color:#212122">
 
 ### <b style='color:#800000;'>Notes</b>
-1. Contract rent, per the <u style='color:#800000;'><a href="https://www2.census.gov/programs-surveys/acs/methodology/design_and_methodology/2024/acs_design_methodology_report_2024.pdf">December 2024 American Community Survey and Puerto Rico Community Survey Design and Methodology</a></u>, is defined as <br>
+1. Contract rent, per the <u style='color:#800000;'><a href="https://www2.census.gov/programs-surveys/acs/methodology/design_and_methodology/2024/acs_design_methodology_report_2024.pdf" style="color:#800000;">December 2024 American Community Survey and Puerto Rico Community Survey Design and Methodology</a></u>, is defined as <br>
 
    <blockquote> <q> ...the monthly rent agreed to or contracted for, regardless of any furnishings, utilities, fees, meals, or services that may be included.</q> (Chapter 6) </blockquote>
 
@@ -148,7 +148,7 @@ and 75th percentile contract rents for the selected census tract.
    <li> The <b style='color:#B22222;'>75% percentile contract rent</b> represents contract rent where 75% of all contract rents in a census tract are lower than this 75th percentile</li>
    </ul>
 
-2. Data for contract rents were taken from the United States Census Bureau <u style='color:#800000;'><a href="https://www.census.gov/programs-surveys/acs.html">American Community Survey</a></u> (ACS codes B25057, B25058, and B25059).
+2. Data for contract rents were taken from the United States Census Bureau <u style='color:#800000;'><a href="https://www.census.gov/programs-surveys/acs.html" style="color:#800000;">American Community Survey</a></u> (ACS codes B25057, B25058, and B25059).
 3. Redistricting over the years affects the availability of some census tracts in certain cities. Unavailability of data for certain census tracts during select years may affect whether or not census tracts are displayed on the map. For these reasons, some census tracts and their data may only be available for a partial range of years.
 4. For data years 2014 and prior, the American Community Survey caps the imputation of contract rents at $2000. For data years 2015 and later, the American Community Survey caps the imputation of contract rents at &#36;3500. As a result, some data on select census tracts may be unavailable in virtue of being higher than those permissible by these thresholds.
 
@@ -159,11 +159,11 @@ Survey data is based on individuals’ voluntary participation in questionnaires
 is not affiliated with, nor endorsed by, the government of the United States.
 
 ### <b style='color:#800000;'>Appreciation</b>
-Thank you to <u style='color:#800000;'><a href="https://www.wearelbre.org/">Long Beach Residents Empowered (LiBRE)</a></u> for providing the opportunity to work on this project.
+Thank you to <u style='color:#800000;'><a href="https://www.wearelbre.org/" style="color:#800000;">Long Beach Residents Empowered (LiBRE)</a></u> for providing the opportunity to work on this project.
 
 ### <b style='color:#800000;'>Author Information</b>
 Raminder Singh Dubb <br>
-GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County">https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County</a></u>
+GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County" style="color:#800000;">https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County</a></u>
 
 © 2025 Raminder Singh Dubb
 """
