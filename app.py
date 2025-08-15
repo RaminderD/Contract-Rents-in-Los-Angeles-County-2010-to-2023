@@ -14,9 +14,61 @@ import json
 from copy import deepcopy
 import os
 
+# ------------ DATA COLLECTION ------------ #
 assets_path = "assets/"
-
 data_path = "masterfiles/"
+
+# Collect and store the mastergeometries into a dictionary whose keys represent years
+geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent_mastergeometry' in file]
+geometries_dict = dict()
+for geometry in geometries:
+    file_path = assets_path + geometry
+    gdf = gpd.read_file(file_path)
+    year = gdf.at[0, 'YEAR']
+    geometries_dict[year] = gdf
+
+# Create a stratified dictionary for mastergeometries, indexed by year and place in that order
+stratified_map_dict = dict()
+years = list(geometries_dict.keys())
+
+for year in years:
+    map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
+    gdf = gpd.read_file(map_path)
+
+    dummy_dict = dict()
+    places = gdf['PLACE'].unique().tolist()
+    for place in places:
+        mask = gdf['PLACE'] == place
+        dummy_dict[place] = gdf[mask]
+
+    stratified_map_dict[year] = deepcopy(dummy_dict)
+
+
+
+# Collect and store the masterfiles into a dictionary whose keys represent years
+files = [file for file in sorted(os.listdir(data_path)) if 'contract_rent_masterfile' in file]
+files_dict = dict()
+for file in files:
+    file_path = data_path + file
+    df = pd.read_csv(file_path)
+    year = df.at[0, 'YEAR']
+    files_dict[year] = df
+
+# Create a stratified dictionary for masterfiles, indexed by year and place in that order
+stratified_file_dict = dict()
+years = list(files_dict.keys())
+
+for year in years:
+    file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
+    df = pd.read_csv(file_path)
+    
+    dummy_dict = dict()
+    places = df['PLACE'].unique().tolist()
+    for place in places:
+        mask = df['PLACE'] == place
+        dummy_dict[place] = df[mask]
+
+    stratified_file_dict[year] = deepcopy(dummy_dict)
 
 
 # ------------ UTILITY FUNCTIONS ------------ #
