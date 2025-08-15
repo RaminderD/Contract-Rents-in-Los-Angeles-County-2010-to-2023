@@ -21,7 +21,7 @@ import os
 # ------------ DATA COLLECTION ------------ #
 
 # Specify your main folder path here
-main_folder = "/home/RaminderD/Contract-Rents-in-LA-County/"
+main_folder = "/home/ramindersinghdubb/Contract-Rents-in-LA-County/"
 
 assets_path = main_folder + "assets/"
 
@@ -433,7 +433,7 @@ Thank you to <u style='color:#800000;'><a href="https://www.wearelbre.org/">Long
 
 ### <b style='color:#800000;'>Author Information</b>
 Raminder Singh Dubb <br>
-GitHub — <u style='color:#800000;'><a href=""> TO BE UPDATED </a></u>
+GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb/">https://github.com/ramindersinghdubb/</a></u>
 
 © 2025 Raminder Singh Dubb
 """
