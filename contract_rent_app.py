@@ -629,7 +629,6 @@ def set_tracts_options(selected_place, selected_year):
     df = masterfile_place_data[selected_year][selected_place]
     options = list(df[~df['B25058_001E'].isna()]['NAME'])
     return [{'label': i, 'value': i} for i in options]
-    #return [{'label': i, 'value': i} for i in masterfile_place_data[selected_year][selected_place]['NAME']]
 
 @app.callback(
     Output('census-tract-dropdown', 'value'),
