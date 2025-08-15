@@ -1,69 +1,697 @@
+# ------------ LIBRARIES ------------ #
 import dash
 from dash import dcc, html
-from dash.dependencies import Input, Output
+from dash.dependencies import Output, Input, State
+import dash_bootstrap_components as dbc
+import feffery_markdown_components as fmc
+
+
+import pandas as pd
 import numpy as np
+import geopandas as gpd
+import plotly.express as px
+import plotly.graph_objects as go
+import json
+from copy import deepcopy
+import os
 
-# Initialize the Dash app
-app = dash.Dash(__name__)
 
-# Sample data
-categories = ['A', 'B', 'C', 'D']
-values1 = np.random.randint(10, 100, size=4)
-values2 = np.random.randint(10, 100, size=4)
+# ------------ REMINDERS AND TIPS ------------ #
 
-# App layout
-app.layout = html.Div([
-    dcc.Graph(id='bar-chart'),
-    dcc.Dropdown(
-        id='chart-type-dropdown',
-        options=[
-            {'label': 'Grouped', 'value': 'group'},
-            {'label': 'Stacked', 'value': 'stack'}
-        ],
-        value='group',  # Default value
-        clearable=False,
-        style={'width': '50%'}
-    ),
-    dcc.Store(id='bar-data', data={'categories': categories, 'values1': list(values1), 'values2': list(values2)})
+# ------------ DATA COLLECTION ------------ #
+
+assets_path = "assets/"
+
+data_path = "mainfiles/"
+
+# Collect and store the mastergeometries into a dictionary whose keys represent years
+geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent_mastergeometry' in file]
+geometries_dict = dict()
+for geometry in geometries:
+    file_path = assets_path + geometry
+    gdf = gpd.read_file(file_path)
+    year = gdf.at[0, 'YEAR']
+    geometries_dict[year] = gdf
+
+# Create a stratified dictionary for mastergeometries, indexed by year and place in that order
+stratified_map_dict = dict()
+years = list(geometries_dict.keys())
+
+for year in years:
+    map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
+    gdf = gpd.read_file(map_path)
+
+    dummy_dict = dict()
+    places = gdf['PLACE'].unique().tolist()
+    for place in places:
+        mask = gdf['PLACE'] == place
+        dummy_dict[place] = gdf[mask]
+
+    stratified_map_dict[year] = deepcopy(dummy_dict)
+
+
+
+# Collect and store the masterfiles into a dictionary whose keys represent years
+files = [file for file in sorted(os.listdir(data_path)) if 'contract_rent_masterfile' in file]
+files_dict = dict()
+for file in files:
+    file_path = data_path + file
+    df = pd.read_csv(file_path)
+    year = df.at[0, 'YEAR']
+    files_dict[year] = df
+
+# Create a stratified dictionary for masterfiles, indexed by year and place in that order
+stratified_file_dict = dict()
+years = list(files_dict.keys())
+
+for year in years:
+    file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
+    df = pd.read_csv(file_path)
+
+    dummy_dict = dict()
+    places = df['PLACE'].unique().tolist()
+    for place in places:
+        mask = df['PLACE'] == place
+        dummy_dict[place] = df[mask]
+
+    stratified_file_dict[year] = deepcopy(dummy_dict)
+
+# ------------ UTILITY FUNCTIONS ------------ #
+
+# Function for returning the FIPS code corresponding to the place name
+path = assets_path + "LosAngelesCounty_2020_FIPS.csv"
+LosAngelesCounty_2020_FIPS = pd.read_csv(path)
+LosAngelesCounty_dict = LosAngelesCounty_2020_FIPS.set_index('PLACE_FIPS')['PLACENAME'].to_dict()
+
+def return_FIPS(place):
+    """
+    Return the FIPS code corresponding to the place name.
+    """
+    FIPS = [key for key, value in LosAngelesCounty_dict.items() if value == place][0]
+    return FIPS
+
+
+
+# Function for collecting all data into a dictionary stratified by Year and Place (in that order)
+def place_data(label_ID, path = data_path):
+    """
+    Collects info on all places across all years by ACS ID into a dictionary.
+    You can subset this dictionary as
+    dictionary[Year][Place]
+    in order to obtain values for a specific place in a specific year.
+    """
+    place_data_dict = dict()
+
+    files = [file for file in sorted(os.listdir(path)) if label_ID in file]
+    years = []
+    for file in files:
+        date = file.split('_', 3)[-1]
+        date = date.split('.csv')[0]
+        years.append(int(date))
+
+    for file, year in zip(files, years):
+        filepath = path + file
+        df = pd.read_csv(filepath)
+
+        placeholder_dict = dict()
+        for place in df['PLACE'].unique().tolist():
+            mask = df.PLACE == place
+            placeholder_dict[place] = df[mask]
+
+        place_data_dict[year] = deepcopy(placeholder_dict)
+
+    return place_data_dict
+
+
+
+# Function for creating a dictionary where the years (keys) hold lists of places tabulated for that year
+def places_year_dict(label_ID, path = data_path):
+    """
+    Some places in Los Angeles County don't have any information for certain years.
+    Using the cleaned data, we extract the names of places which do have data for a
+    given year.
+    """
+    year_data_dict = dict()
+
+    files = [file for file in sorted(os.listdir(path)) if label_ID in file]
+    for file in files:
+        file_path = path + file
+        df = pd.read_csv(file_path)
+        places = df['PLACE'].unique().tolist()
+        year = df.at[0, 'YEAR']
+        year_data_dict[year] = places
+
+    return year_data_dict
+
+
+
+# Function that returns a dataframe consisting of the census tract of interest
+def tract_dataframe(place, tract):
+    years = list(stratified_file_dict.keys())
+    data_years = []
+    for year in years:
+        places = list(stratified_file_dict[year].keys())
+        if place in places:
+            data_years.append(year)
+        else:
+            None
+
+    tract_data = pd.DataFrame()
+    for year in data_years:
+        df = stratified_file_dict[year][place]
+        if np.any(df.NAME == tract):
+            data_row = df[df.NAME == tract]
+            tract_data = pd.concat([tract_data, data_row])
+        else:
+            None
+
+    return tract_data
+
+# Commented out IPython magic to ensure Python compatibility.
+# ------------ GEOSPATIAL CHLOROPLETH MAP FUNCTION ------------ #
+def rent_chloropleth_map(place, year):
+    df = stratified_file_dict[year][place]
+    gdf = stratified_map_dict[year][place]
+    gdf_dict = json.loads(gdf.to_json())
+    center_lat = round(gdf.INTPTLAT.mean(), 5)
+    center_lon = round(gdf.INTPTLON.mean(), 5)
+
+    # This is done because the ACS data caps values at $3501 (for data years
+    # after 2014) and $2001 (for data years 2014 and prior). Thus, if a certain
+    # metric indicates that number, it means the selected metric is obviously much
+    # higher.
+
+    # cc. Example: https://data.census.gov/table/ACSDT5Y2015.B25061?q=Renter+Costs&g=160XX00US0643000$1400000
+    # Compare the highest price bin in 2023 ('$3500 or more') to the highest price
+    # bin in 2014 ('$2000 or more') or any year prior to 2014 for that matter.
+
+    # As a side, it appears that max price was revised up from $2000 to $3500,
+    # corresponding to the transition from 2014 to 2015. This possibly reflects
+    # the sentiment that ACS data would not adequately capture the entire spectrum
+    # of variation in rents especially as they occur along the higher end of the spectrum.
+    # Nonetheless, it is curious as to why ACS data does not display or provide higher price bins
+    # for data years prior to 2014.
+
+    df['B25058_001E_copy'] = df['B25058_001E']
+    df['Median'] = df['B25058_001E_copy']
+    df['75th'] = df['B25059_001E']
+    df['25th'] = df['B25057_001E']
+    columns = ['Median', '75th', '25th']
+    for col in columns:
+        df[col] = '$' + df[col].astype(str)
+        df[col] = df[col].str.replace('.0', '')
+        df.loc[df[col] == '$3501', col] = 'Not available. Exceeds $3500!'
+        df.loc[df[col] == '$nan', col] = 'Not Available!'
+        if year in [2010, 2011, 2012, 2013, 2014]:
+            df.loc[df[col] == '$2001', col] = 'Not available. Exceeds $2000!'
+
+
+
+    hovertext = """
+<b style='font-size:16px;'>%{customdata[2]}</b><br>
+# %{customdata[1]}, Los Angeles County <br><br>
+Median Contract Rent (%{customdata[0]}): <br> <b style='color:#800000; font-size:14px;'>%{customdata[6]}</b> <br><br>
+25th Percentile Contract Rent (%{customdata[0]}): <br> <b style='color:#B22222; font-size:14px;'>%{customdata[7]}</b> <br><br>
+75th Percentile Contract Rent (%{customdata[0]}): <br> <b style='color:#B22222; font-size:14px;'>%{customdata[8]}</b>
+<extra></extra>
+    """
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Choroplethmap(geojson      = gdf_dict,
+                         customdata   = df[['YEAR', 'PLACE', 'NAME', 'B25057_001E', 'B25058_001E', 'B25059_001E', 'Median', '25th', '75th']],
+                         locations    = df['GEO_ID'],
+                         featureidkey = 'properties.GEO_ID',
+                         colorscale   = "YlOrRd",
+                         z = df['B25058_001E'],
+                         zmin = 0, zmax = 3500,
+                         colorbar = {'title': 'Median Contract<br>Rents ($)',
+                                     'title_font_color': '#020403',
+                                     'title_font_weight': 500,
+                                     'tickprefix': '$',
+                                     'ticklabelposition': 'outside bottom',
+                                     'outlinewidth': 2,
+                                    },
+                         marker = {'opacity': 0.4,
+                                   'line_color': '#020403',
+                                   'line_width': 1.75,
+                                  },
+                         hoverlabel = {'bgcolor': '#FAFAFA',     # Very light gray
+                                       'bordercolor': '#BEBEBE', # Light gray
+                                       'font': {'color': '#020403'}
+                                      },
+                         hovertemplate = hovertext,
+                        )
+    )
+
+    fig.update_layout(map_style  = "streets",
+                      map_center = {"lat": center_lat, "lon": center_lon},
+                      map_zoom   = 10.5,
+                      hoverlabel_align = 'left',
+                      margin     = {'l': 0, 'r': 0, 't': 0, 'b': 0},
+                      autosize   = True,
+                      uirevision = True,
+                      paper_bgcolor = '#FEF9F3',
+                      plot_bgcolor  = '#FEF9F3',
+                     )
+
+    return fig
+
+# ------------ CENSUS TRACT TRACE MAP FUNCTION ------------ #
+
+# Credit:
+# https://stackoverflow.com/a/79144703
+
+def census_tract_trace(place, year, census_tract):
+    df = stratified_file_dict[year][place]
+    df = df[df.NAME == census_tract]
+
+    gdf = stratified_map_dict[year][place]
+    gdf = gdf[gdf.NAME == census_tract]
+    gdf_dict = json.loads(gdf.to_json())
+
+    df['dummy'] = 1
+
+    fig_aux = go.Figure()
+
+    fig_aux.add_trace(
+        go.Choroplethmap(geojson      = gdf_dict,
+                         featureidkey = 'properties.GEO_ID',
+                         locations    = df['GEO_ID'],
+                         z            = df['dummy'],
+                         zmax = 1, zmin = 0,
+                         colorscale   = [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0)']], # Colors with alpha channel, both fully transparent
+                         showscale    = False,
+                         marker       = {'line_color': '#04D9FF', 'line_width': 4},
+                         hoverinfo    = 'skip',  # Hide hover info so you still get the main figure's one
+                        )
+    )
+
+    return fig_aux
+
+# Commented out IPython magic to ensure Python compatibility.
+# ------------ CENSUS TRACT PLOT FUNCTION ------------ #
+def census_tract_plot(place, census_tract):
+    tract_data = tract_dataframe(place, census_tract)
+
+    # See the comments from the geospatial chloropleth map function
+    # as to why the following is done.
+
+    tract_data['B25058_001E_copy'] = tract_data['B25058_001E']
+    tract_data['Median'] = tract_data['B25058_001E_copy']
+    tract_data['75th'] = tract_data['B25059_001E']
+    tract_data['25th'] = tract_data['B25057_001E']
+    columns = ['Median', '75th', '25th']
+    for col in columns:
+        tract_data[col] = '$' + tract_data[col].astype(str)
+        tract_data[col] = tract_data[col].str.replace('.0', '')
+        tract_data.loc[tract_data[col] == '$3501', col] = 'Not available. Exceeds $3500!'
+        tract_data.loc[tract_data[col] == '$nan', col] = 'Not Available!'
+        years = [2010, 2011, 2012, 2013, 2014]
+        for year in years:
+            tract_data.loc[(tract_data[col] == '$2001') & (tract_data['YEAR'] == year), col] = 'Not available. Exceeds $2000!'
+
+    hovertext = """
+<b style='font-size:16px;'>%{customdata[0]}</b><br>
+# %{customdata[1]}, %{customdata[2]} <br><br>
+Median Contract Rent: <br> <b style='color:#800000; font-size:14px;'>%{customdata[3]}</b> <br><br>
+25th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>%{customdata[4]}</b> <br><br>
+75th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>%{customdata[5]}</b>
+<extra></extra>
+    """
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(x            = list(tract_data['YEAR']),
+                   y            = list(tract_data['B25058_001E']),
+                   customdata   = tract_data[['YEAR', 'NAME', 'PLACE', 'Median', '25th', '75th']],
+                   mode         = 'lines+markers',
+                   line         = {'color': '#800000'},
+                   hoverlabel   = {'bgcolor': '#FAFAFA', # Very light gray
+                                   'bordercolor': '#BEBEBE', # Light gray
+                                   'font': {'color': '#020403'}
+                                  },
+                   hovertemplate = hovertext,
+                   marker_size   = 10,
+                   marker_line_width = 2,
+                   marker_line_color = '#F5FBFF',
+                  )
+    )
+
+    fig.update_layout(font_color       = '#020403',
+                      hoverlabel_align = 'left',
+                      margin           = {"b": 30, "t": 40},
+                      autosize         = True,
+                      uirevision       = True,
+                      paper_bgcolor    = '#FEF9F3',
+                      plot_bgcolor     = '#FEF9F3',
+                      title = {'text': f'Median Contract Rents, {tract_data["YEAR"].min()} to {tract_data["YEAR"].max()}',
+                              },
+                      xaxis = {'title_text': 'Year',
+                               'showgrid': False,
+                               'range': [tract_data['YEAR'].min()-0.5, tract_data['YEAR'].max()+0.5],
+                               'tickvals': [*range(int(tract_data['YEAR'].min()), int(tract_data['YEAR'].max()+1))],
+                              },
+                      yaxis = {'title_text': 'Median Contract Rents ($)',
+                               'tickprefix': '$',
+                               'gridcolor': '#E0E0E0',
+                               'ticklabelstandoff': 5,
+                               'title_standoff': 15,
+                              },
+                     )
+
+    return fig
+
+# ------------ CONTAINERS AND STRINGS------------ #
+
+# Container for geospatial choropleth map
+geodata_map = html.Div([
+    dcc.Graph(
+        id = "chloropleth_map",
+        config={'modeBarButtonsToRemove': ['pan2d', 'lasso2d', 'select2d', 'resetview'],
+                'displaylogo': False
+               },
+    )
 ])
 
-# Client-side callback (JavaScript function)
-app.clientside_callback(
-    """
-    function(chartType, data) {
-        var categories = data.categories;
-        var values1 = data.values1;
-        var values2 = data.values2;
+# Container for rent plot
+geodata_plot = html.Div([
+    dcc.Graph(
+        id = "rent_plot",
+        config={'modeBarButtonsToRemove': ['pan2d', 'lasso2d', 'select2d', 'resetview'],
+                'displaylogo': False
+               },
+    )
+])
 
-        var barmode = chartType === 'stack' ? 'stack' : 'group';
 
-        return {
-            'data': [
-                {
-                    'x': categories,
-                    'y': values1,
-                    'type': 'bar',
-                    'name': 'Series 1'
-                },
-                {
-                    'x': categories,
-                    'y': values2,
-                    'type': 'bar',
-                    'name': 'Series 2'
-                }
-            ],
-            'layout': {
-                'title': `Bar Chart (${chartType === 'stack' ? 'Stacked' : 'Grouped'})`,
-                'barmode': barmode
-            }
-        };
-    }
-    """,
-    Output('bar-chart', 'figure'),
-    [Input('chart-type-dropdown', 'value')],
-    [Input('bar-data', 'data')]
+
+# Footer string
+footer_string = """
+### <b style='color:#800000;'>Information</b>
+
+This interactive website allows you to view the median, 25th percentile, and 75th percentile contract rents for census tracts across various cities in Los Angeles county. <br>
+
+Use the dropdowns to choose a city of interest and a year of interest. <br>
+
+Hover over the map to view information on the median, 25th percentile, and 75th percentile contract rents for census tracts in the selected city during the selected year. <br>
+
+Click on a census tract to visualize changes in its median contract rent over time in the plot. Hover over points in the plot to view additional information on the median, 25th percentile,
+and 75th percentile contract rents for the selected census tract.
+
+<hr style="height:2px; border-width:0; color:#212122; background-color:#212122">
+
+### <b style='color:#800000;'>Notes</b>
+1. Contract rent, per the <u style='color:#800000;'><a href="https://www2.census.gov/programs-surveys/acs/methodology/design_and_methodology/2024/acs_design_methodology_report_2024.pdf">December 2024 American Community Survey and Puerto Rico Community Survey Design and Methodology</a></u>, is defined as <br>
+
+   <blockquote> <q> ...the monthly rent agreed to or contracted for, regardless of any furnishings, utilities, fees, meals, or services that may be included.</q> (Chapter 6) </blockquote>
+
+   Thus, <ul>
+   <li> The <b style='color:#800000;'>median contract rent</b> represents contract rent where 50% of all contract rents in a census tract are lower than this median, </li>
+   <li> The <b style='color:#B22222;'>25% percentile contract rent</b> represents contract rent where 25% of all contract rents in a census tract are lower than this 25th percentile</li>
+   <li> The <b style='color:#B22222;'>75% percentile contract rent</b> represents contract rent where 75% of all contract rents in a census tract are lower than this 75th percentile</li>
+   </ul>
+
+2. Data for contract rents were taken from the United States Census Bureau <u style='color:#800000;'><a href="https://www.census.gov/programs-surveys/acs.html">American Community Survey</a></u> (ACS codes B25057, B25058, and B25059).
+3. Redistricting over the years affects the availability of some census tracts in certain cities. Unavailability of data for certain census tracts during select years may affect whether or not census tracts are displayed on the map. For these reasons, some census tracts and their data may only be available for a partial range of years.
+4. For data years 2014 and prior, the American Community Survey caps the imputation of contract rents at $2000. For data years 2015 and later, the American Community Survey caps the imputation of contract rents at &#36;3500. As a result, some data on select census tracts may be unavailable in virtue of being higher than those permissible by these thresholds.
+
+### <b style='color:#800000;'>Disclaimer</b>
+
+This tool is developed for illustrative purposes. This tool is constructed with the assistance of the United States Census Bureau’s American Community Survey data.
+Survey data is based on individuals’ voluntary participation in questionnaires. The creator is not liable for any missing, inaccurate, or incorrect data. This tool
+is not affiliated with, nor endorsed by, the government of the United States.
+
+### <b style='color:#800000;'>Appreciation</b>
+Thank you to <u style='color:#800000;'><a href="https://www.wearelbre.org/">Long Beach Residents Empowered (LiBRE)</a></u> for providing the opportunity to work on this project.
+
+### <b style='color:#800000;'>Author Information</b>
+Raminder Singh Dubb <br>
+GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb/">https://github.com/ramindersinghdubb/</a></u>
+
+© 2025 Raminder Singh Dubb
+"""
+
+# ------------ APP ------------ #
+
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SIMPLEX])
+server = app.server
+
+# ------------ Initialization ------------ #
+masterfile_place_year_dict = places_year_dict('contract_rent_masterfile')
+masterfile_place_data = place_data('contract_rent_masterfile')
+
+# ------------ Colors ------------ #
+Cream_color = '#FAE8E0'
+SnowWhite_color = '#F5FEFD'
+AlabasterWhite_color = '#FEF9F3'
+LightBrown_color = '#F7F2EE'
+Rose_color = '#FF7F7F'
+MaroonRed_color = '#800000'
+SinopiaRed_color = '#C0451C'
+Teal_color = '#2A9D8F'
+ObsidianBlack_color = '#020403'
+CherryRed_color = '#E3242B'
+
+
+
+app.layout = dbc.Container([
+    # ------------ Title ------------ #
+    html.Div([
+        html.B("Rents in Los Angeles County")
+    ], style = {'display': 'block',
+                'color': MaroonRed_color,
+                'margin': '0.2em 0',
+                'padding': '0px 0px 0px 0px', # Numbers represent spacing for the top, right, bottom, and left (in that order)
+                'font-family': 'Trebuchet MS, sans-serif',
+                'font-size': '220.0%'
+               }
+            ),
+    # ------------ Subtitle ------------ #
+    html.Div([
+        html.P("Median, 25th Percentile, and 75th Percentile Contract Rents for Census Tracts across Cities and Census-Designated Places in Los Angeles County, 2010 to 2023")
+    ], style = {'display': 'block',
+                'color': ObsidianBlack_color,
+                'margin': '-0.5em 0',
+                'padding': '0px 0px 0px 0px',
+                'font-family': 'Trebuchet MS, sans-serif',
+                'font-size': '105.0%'
+               }
+            ),
+    # ------------ Horizontal line rule ------------ #
+    html.Div([
+        html.Hr()
+    ], style = {'display': 'block',
+                'height': '1px',
+                'border': 0,
+                'margin': '-0.9em 0',
+                'padding': 0
+               }
+            ),
+    # ------------ Labels for dropdowns (discarded) ------------ #
+
+    # ------------ Dropdowns ------------ #
+    html.Div([
+        html.Div([
+            dcc.Dropdown(id='place-dropdown',
+                         placeholder='Select a place',
+                         options=[{'label': p, 'value': p} for p in masterfile_place_year_dict[2023]],
+                         value='Long Beach',
+                         clearable=False
+                        )
+        ], style = {'display': 'inline-block',
+                    'margin': '0 0',
+                    'padding': '0px 15px 0px 0px',
+                    'width': '22.5%'
+                   }
+                ),
+        html.Div([
+            dcc.Dropdown(id='year-dropdown',
+                         placeholder='Select a year',
+                         clearable=False
+                        )
+        ], style = {'display': 'inline-block',
+                    'margin': '0 0',
+                    'padding': '30px 15px 0px 0px',
+                    'width': '12.5%',
+                   }
+                ),
+        html.Div([
+            dcc.Dropdown(id='census-tract-dropdown',
+                         placeholder = 'Click on a census tract in the map',
+                         clearable=True
+                        )
+        ], style = {'display': 'inline-block',
+                    'padding': '0px 30px 0px 0px',
+                    'margin': '0 0',
+                    'width': '30.0%'
+                   }
+                ),
+    ]
+            ),
+    # ------------ Spatial map with plot ------------ #
+    html.Div([
+            dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(id = "map-title",
+                                   style = {'background-color': MaroonRed_color,
+                                            'color': '#FFFFFF'}
+                                  ),
+                    dbc.CardBody([geodata_map],
+                                 style = {'background-color': AlabasterWhite_color}
+                                )
+                ])
+            ]),
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(id = "plot-title",
+                                   style = {'background-color': Teal_color,
+                                            'color': '#FFFFFF'}
+                                  ),
+                    dbc.CardBody([geodata_plot],
+                                 style = {'background-color': AlabasterWhite_color}
+                                )
+                ])
+            ])
+        ], align='center', justify='center'
+               )
+    ], style = {
+                'padding': '10px 0px 20px 0px',
+               }
+            ),
+    # ------------ Footer ------------ #
+    html.Div([
+        fmc.FefferyMarkdown(markdownStr    = footer_string,
+                            renderHtml     = True,
+                            style          = {'background': LightBrown_color,
+                                              'margin-top': '1em'
+                                             }
+                           )
+    ]
+            )
+], style = {'background-color': LightBrown_color, "padding": "0px 0px 20px 0px",})
+
+
+
+# ------------ CALLBACKS ------------ #
+#
+# Summary (inputs -> outputs)
+#
+#
+# Dropdowns:
+#  place value -> year options
+#  year options -> default year value
+#  place options, year options, map ClickData -> census tract options
+#
+# Titles:
+#  place value, year value -> map title
+#  place value, census tract value -> plot title
+#
+# Graphs:
+#  place value, year value, census tract value -> map
+#  place value, census tract value -> plot
+#
+# ----------------------------------- #
+
+"""
+# ------------ Dropdowns ------------ #
+@app.callback(
+    Output('year-dropdown', 'options'),
+    [Input('place-dropdown', 'value'),
+    ]
 )
+def set_years_options(selected_place):
+    return [{'label': k, 'value': k} for k, v in masterfile_place_year_dict.items() if selected_place in v]
 
-# Run the app
-if __name__ == '__main__':
-    app.run_server(debug=False)
+@app.callback(
+    Output('year-dropdown', 'value'),
+    [Input('year-dropdown', 'options')]
+)
+def set_year_value(options):
+    index = next(index for (index, subdic) in enumerate(options) if subdic['label'] == 2023)
+    value_label = options[index]['label']
+    return value_label
+
+@app.callback(
+    Output('census-tract-dropdown', 'options'),
+    [Input('place-dropdown', 'value'),
+     Input('year-dropdown', 'value')
+    ]
+)
+def set_tracts_options(selected_place, selected_year):
+    df = masterfile_place_data[selected_year][selected_place]
+    options = list(df[~df['B25058_001E'].isna()]['NAME'])
+    return [{'label': i, 'value': i} for i in options]
+
+@app.callback(
+    Output('census-tract-dropdown', 'value'),
+    Input('chloropleth_map', 'clickData')
+)
+def update_census_tract_dropdown(clicked_data):
+    if clicked_data:
+        selected_tract = clicked_data['points'][0]['customdata'][2]
+    return selected_tract
+
+
+# ------------ Titles ------------ #
+@app.callback(
+    Output('map-title', 'children'),
+    [Input('place-dropdown', 'value'),
+    Input('year-dropdown', 'value'),]
+)
+def set_map_title(selected_place, selected_year):
+    if (selected_year == None):
+        return [html.B(f"Please select a year to view rents in {selected_place}!")]
+    else:
+        return [html.B('Median Contract Rents'), ' in ', html.B(f'{selected_place}'), ' by Census Tract, ', html.B(f'{selected_year}')]
+
+@app.callback(
+    Output('plot-title', 'children'),
+    [Input('place-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value')]
+)
+def set_plot_title(selected_place, selected_tract):
+    if (selected_tract == None):
+        return [html.B('Please click on a tract.')]
+    else:
+        return [f' {selected_place}, ', html.B(f'{selected_tract}')]
+
+
+# ------------ Graphs ------------ #
+@app.callback(
+    Output('chloropleth_map', 'figure'),
+    [Input('place-dropdown', 'value'),
+     Input('year-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value')
+    ]
+)
+def update_map(selected_place, selected_year, selected_tract):
+    fig = rent_chloropleth_map(selected_place, selected_year)
+
+    if selected_tract is not None:
+        fig_aux = census_tract_trace(selected_place, selected_year, selected_tract)
+        fig.add_trace(fig_aux.data[0])
+
+    return fig
+
+@app.callback(
+    Output('rent_plot', 'figure'),
+    [Input('place-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value')
+    ]
+)
+def update_plot(selected_place, selected_tract):
+    if selected_tract is None:
+        return None
+    else:
+        fig = census_tract_plot(selected_place, selected_tract)
+        return fig
+"""
+
+
+# ------------ EXECUTE THE APP ------------ #
+if __name__ == "__main__":
+    app.run(debug=False)
