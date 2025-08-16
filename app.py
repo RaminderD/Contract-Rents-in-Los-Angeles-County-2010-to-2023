@@ -1,5 +1,6 @@
+# ------------ LIBRARIES ------------ #
 import dash
-from dash import dcc, html
+from dash import dcc, html, clientside_callback, ClientsideFunction
 from dash.dependencies import Output, Input, State
 import dash_bootstrap_components as dbc
 import feffery_markdown_components as fmc
@@ -19,18 +20,9 @@ assets_path = "assets/"
 
 data_path = "masterfiles/"
 
-# Collect and store the mastergeometries into a dictionary whose keys represent years
-geometries = [file for file in sorted(os.listdir(assets_path)) if 'contract_rent_mastergeometry' in file]
-geometries_dict = dict()
-years = range(2010, 2024)
-for year in years:
-    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/contract_rent_mastergeometry_{year}.json'
-    gdf = gpd.read_file(url_path)
-    geometries_dict[year] = gdf
-
 # Create a stratified dictionary for mastergeometries, indexed by year and place in that order
 stratified_map_dict = dict()
-years = list(geometries_dict.keys())
+years = range(2010, 2024)
 for year in years:
     url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/contract_rent_mastergeometry_{year}.json'
     gdf = gpd.read_file(url_path)
@@ -43,18 +35,10 @@ for year in years:
 
     stratified_map_dict[year] = deepcopy(dummy_dict)
 
-# Collect and store the masterfiles into a dictionary whose keys represent years
-files = [file for file in sorted(os.listdir(data_path)) if 'contract_rent_masterfile' in file]
-files_dict = dict()
-for file in files:
-    file_path = data_path + file
-    df = pd.read_csv(file_path)
-    year = df.at[0, 'YEAR']
-    files_dict[year] = df
 
 # Create a stratified dictionary for masterfiles, indexed by year and place in that order
 stratified_file_dict = dict()
-years = list(files_dict.keys())
+years = range(2010, 2024)
 
 for year in years:
     file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
@@ -70,6 +54,14 @@ for year in years:
 
 
 # ------------ UTILITY FUNCTIONS ------------ #
+
+# Function for returning the FIPS code corresponding to the place name
+path = assets_path + "LosAngelesCounty_2020_FIPS.csv"
+LosAngelesCounty_2020_FIPS = pd.read_csv(path)
+LosAngelesCounty_dict = LosAngelesCounty_2020_FIPS.set_index('PLACE_FIPS')['PLACENAME'].to_dict()
+
+
+
 # Function for collecting all data into a dictionary stratified by Year and Place (in that order)
 def place_data(label_ID, path = data_path):
     """
@@ -79,7 +71,7 @@ def place_data(label_ID, path = data_path):
     in order to obtain values for a specific place in a specific year.
     """
     place_data_dict = dict()
-
+    
     files = [file for file in sorted(os.listdir(path)) if label_ID in file]
     years = []
     for file in files:
@@ -90,7 +82,7 @@ def place_data(label_ID, path = data_path):
     for file, year in zip(files, years):
         filepath = path + file
         df = pd.read_csv(filepath)
-
+        
         placeholder_dict = dict()
         for place in df['PLACE'].unique().tolist():
             mask = df.PLACE == place
@@ -101,6 +93,7 @@ def place_data(label_ID, path = data_path):
     return place_data_dict
 
 
+
 # Function for creating a dictionary where the years (keys) hold lists of places tabulated for that year
 def places_year_dict(label_ID, path = data_path):
     """
@@ -109,7 +102,7 @@ def places_year_dict(label_ID, path = data_path):
     given year.
     """
     year_data_dict = dict()
-
+    
     files = [file for file in sorted(os.listdir(path)) if label_ID in file]
     for file in files:
         file_path = path + file
@@ -119,6 +112,192 @@ def places_year_dict(label_ID, path = data_path):
         year_data_dict[year] = places
 
     return year_data_dict
+
+
+
+# Function that returns a dataframe consisting of the census tract of interest
+def tract_dataframe(place, tract):
+    years = list(stratified_file_dict.keys())
+    data_years = []
+    for year in years:
+        places = list(stratified_file_dict[year].keys())
+        if place in places:
+            data_years.append(year)
+        else:
+            None
+            
+    tract_data = pd.DataFrame()
+    for year in data_years:
+        df = stratified_file_dict[year][place]
+        if np.any(df.NAME == tract):
+            data_row = df[df.NAME == tract]
+            tract_data = pd.concat([tract_data, data_row])
+        else:
+            None
+
+    tract_data['B25058_001E_copy'] = tract_data['B25058_001E']
+    tract_data['Median'] = tract_data['B25058_001E_copy']
+    tract_data['75th'] = tract_data['B25059_001E']
+    tract_data['25th'] = tract_data['B25057_001E']
+    columns = ['Median', '75th', '25th']
+    for col in columns:
+        tract_data[col] = '$' + tract_data[col].astype(str)
+        tract_data[col] = tract_data[col].str.replace('.0', '')
+        tract_data.loc[tract_data[col] == '$3501', col] = 'Not available. Exceeds $3500!'
+        tract_data.loc[tract_data[col] == '$nan', col] = 'Not Available!'
+        years = [2010, 2011, 2012, 2013, 2014]
+        for year in years:
+            tract_data.loc[(tract_data[col] == '$2001') & (tract_data['YEAR'] == year), col] = 'Not available. Exceeds $2000!'
+
+    return tract_data
+
+# ------------ GEOSPATIAL CHLOROPLETH MAP FUNCTION ------------ #
+def rent_chloropleth_map(place, year):
+    df = stratified_file_dict[year][place]
+    gdf = stratified_map_dict[year][place]
+    gdf_dict = json.loads(gdf.to_json())
+    center_lat = round(gdf.INTPTLAT.mean(), 5)
+    center_lon = round(gdf.INTPTLON.mean(), 5)
+    
+    hovertext = """
+<b style='font-size:16px;'>%{customdata[2]}</b><br>
+%{customdata[1]}, Los Angeles County <br><br>
+Median Contract Rent (%{customdata[0]}): <br> <b style='color:#800000; font-size:14px;'>%{customdata[4]}</b> <br><br>
+25th Percentile Contract Rent (%{customdata[0]}): <br> <b style='color:#B22222; font-size:14px;'>%{customdata[5]}</b> <br><br>
+75th Percentile Contract Rent (%{customdata[0]}): <br> <b style='color:#B22222; font-size:14px;'>%{customdata[6]}</b>
+<extra></extra>
+    """
+        
+    fig = go.Figure()
+    
+    fig.add_trace(
+        go.Choroplethmap(geojson      = gdf_dict,
+                         customdata   = df[['YEAR', 'PLACE', 'NAME', 'B25058_001E', 'Median', '25th', '75th']],
+                         locations    = df['GEO_ID'],
+                         featureidkey = 'properties.GEO_ID',
+                         colorscale   = "YlOrRd",
+                         z = df['B25058_001E'],
+                         zmin = 0, zmax = 3500,
+                         colorbar = {'title': 'Median Contract<br>Rents ($)',
+                                     'title_font_color': '#020403',
+                                     'title_font_weight': 500,
+                                     'tickprefix': '$',
+                                     'ticklabelposition': 'outside bottom',
+                                     'outlinewidth': 2,
+                                    },
+                         marker = {'opacity': 0.4,
+                                   'line_color': '#020403',
+                                   'line_width': 1.75,
+                                  },
+                         hoverlabel = {'bgcolor': '#FAFAFA',     # Very light gray
+                                       'bordercolor': '#BEBEBE', # Light gray
+                                       'font': {'color': '#020403'}
+                                      },
+                         hovertemplate = hovertext,
+                        )
+    )
+    
+    fig.update_layout(map_style  = "streets",
+                      map_center = {"lat": center_lat, "lon": center_lon},
+                      map_zoom   = 10.5,
+                      hoverlabel_align = 'left',
+                      margin     = {'l': 0, 'r': 0, 't': 0, 'b': 0},
+                      autosize   = True,
+                      uirevision = True,
+                      paper_bgcolor = '#FEF9F3',
+                      plot_bgcolor  = '#FEF9F3',
+                     )
+
+    return fig
+
+
+# ------------ CENSUS TRACT TRACE MAP FUNCTION ------------ #
+
+# Credit: 
+# https://stackoverflow.com/a/79144703
+
+def census_tract_trace(place, year, census_tract):
+    df = stratified_file_dict[year][place]
+    df = df[df.NAME == census_tract]
+    
+    gdf = stratified_map_dict[year][place]
+    gdf = gdf[gdf.NAME == census_tract]
+    gdf_dict = json.loads(gdf.to_json())
+
+    df['dummy'] = 1
+
+    fig_aux = go.Figure()
+
+    fig_aux.add_trace(
+        go.Choroplethmap(geojson      = gdf_dict,
+                         featureidkey = 'properties.GEO_ID',
+                         locations    = df['GEO_ID'],
+                         z            = df['dummy'],
+                         zmax = 1, zmin = 0,
+                         colorscale   = [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0)']], # Colors with alpha channel, both fully transparent
+                         showscale    = False,
+                         marker       = {'line_color': '#04D9FF', 'line_width': 4},
+                         hoverinfo    = 'skip',  # Hide hover info so you still get the main figure's one
+                        )
+    )
+
+    return fig_aux
+
+# ------------ CENSUS TRACT PLOT FUNCTION ------------ #
+def census_tract_plot(place, census_tract):
+    tract_data = tract_dataframe(place, census_tract)
+
+    hovertext = """
+<b style='font-size:16px;'>%{customdata[0]}</b><br>
+%{customdata[1]}, %{customdata[2]} <br><br>
+Median Contract Rent: <br> <b style='color:#800000; font-size:14px;'>%{customdata[3]}</b> <br><br>
+25th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>%{customdata[4]}</b> <br><br>
+75th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>%{customdata[5]}</b>
+<extra></extra>
+    """
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(x            = list(tract_data['YEAR']),
+                   y            = list(tract_data['B25058_001E']),
+                   customdata   = tract_data[['YEAR', 'NAME', 'PLACE', 'Median', '25th', '75th']],
+                   mode         = 'lines+markers',
+                   line         = {'color': '#800000'},
+                   hoverlabel   = {'bgcolor': '#FAFAFA', # Very light gray
+                                   'bordercolor': '#BEBEBE', # Light gray
+                                   'font': {'color': '#020403'}
+                                  },
+                   hovertemplate = hovertext,
+                   marker_size   = 10,
+                   marker_line_width = 2,
+                   marker_line_color = '#F5FBFF',
+                  )
+    )
+
+    fig.update_layout(font_color       = '#020403',
+                      hoverlabel_align = 'left',
+                      margin           = {"b": 30, "t": 40},
+                      autosize         = True,
+                      uirevision       = True,
+                      paper_bgcolor    = '#FEF9F3',
+                      plot_bgcolor     = '#FEF9F3',
+                      title = {'text': f'Median Contract Rents, {tract_data['YEAR'].min()} to {tract_data['YEAR'].max()}',
+                              },
+                      xaxis = {'title_text': 'Year',
+                               'showgrid': False,
+                               'range': [tract_data['YEAR'].min()-0.5, tract_data['YEAR'].max()+0.5],
+                               'tickvals': [*range(int(tract_data['YEAR'].min()), int(tract_data['YEAR'].max()+1))],
+                              },
+                      yaxis = {'title_text': 'Median Contract Rents ($)',
+                               'tickprefix': '$',
+                               'gridcolor': '#E0E0E0',
+                               'ticklabelstandoff': 5,
+                               'title_standoff': 15,
+                              },
+                     )
+
+    return fig
 
 # ------------ CONTAINERS AND STRINGS------------ #
 
@@ -430,4 +609,4 @@ def update_plot(selected_place, selected_tract):
 if __name__ == '__main__':
     app.run(debug=False)
 
-#app.css.append_css({"external_url": "https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/style.css"})
+app.css.append_css({"external_url": "https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/style.css"})
