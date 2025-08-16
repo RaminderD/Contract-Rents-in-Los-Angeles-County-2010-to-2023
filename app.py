@@ -364,7 +364,7 @@ Thank you to <u style='color:#800000;'><a href="https://www.wearelbre.org/" styl
 
 ### <b style='color:#800000;'>Author Information</b>
 Raminder Singh Dubb <br>
-GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb" style="color:#800000;">https://github.com/ramindersinghdubb</a></u>
+GitHub — <u><a href="https://github.com/ramindersinghdubb">https://github.com/ramindersinghdubb</a></u>
 
 © 2025 Raminder Singh Dubb
 """
