@@ -327,6 +327,108 @@ app.layout = dbc.Container([
             )
 ], style = {'background-color': '#FFFFFF', "padding": "0px 0px 20px 0px",})
 
+# ------------ CALLBACKS ------------ #
+
+# ------------ Dropdowns ------------ #
+@app.callback(
+    Output('year-dropdown', 'options'),
+    [Input('place-dropdown', 'value'),
+    ]
+)
+def set_years_options(selected_place):
+    return [{'label': k, 'value': k} for k, v in masterfile_place_year_dict.items() if selected_place in v]
+
+@app.callback(
+    Output('year-dropdown', 'value'),
+    [Input('year-dropdown', 'options')]
+)
+def set_year_value(options):
+    index = next(index for (index, subdic) in enumerate(options) if subdic['label'] == 2023)
+    value_label = options[index]['label']
+    return value_label
+
+@app.callback(
+    Output('census-tract-dropdown', 'options'),
+    [Input('place-dropdown', 'value'),
+     Input('year-dropdown', 'value')
+    ]
+)
+def set_tracts_options(selected_place, selected_year):
+    df = masterfile_place_data[selected_year][selected_place]
+    options = list(df[~df['B25058_001E'].isna()]['NAME'])
+    return [{'label': i, 'value': i} for i in options]
+
+@app.callback(
+    Output('census-tract-dropdown', 'value'),
+    Input('chloropleth_map', 'clickData')
+)
+def update_census_tract_dropdown(clicked_data):
+    if clicked_data:
+        selected_tract = clicked_data['points'][0]['customdata'][2]
+    return selected_tract
+
+
+# ------------ Titles ------------ #
+@app.callback(
+    Output('map-title', 'children'),
+    [Input('place-dropdown', 'value'),
+    Input('year-dropdown', 'value'),]
+)
+def set_map_title(selected_place, selected_year):
+    if (selected_year == None):
+        return [html.B(f"Please select a year to view rents in {selected_place}!")]
+    else:
+        return [html.B('Median Contract Rents'), ' in ', html.B(f'{selected_place}'), ' by Census Tract, ', html.B(f'{selected_year}')]
+
+@app.callback(
+    Output('plot-title', 'children'),
+    [Input('place-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value')]
+)
+def set_plot_title(selected_place, selected_tract):
+    if (selected_tract == None):
+        return [html.B('Please click on a tract.')]
+    else:
+        return [f' {selected_place}, ', html.B(f'{selected_tract}')]
+
+
+# ------------ Graphs ------------ #
+@app.callback(
+    Output('chloropleth_map', 'figure'),
+    [Input('place-dropdown', 'value'),
+     Input('year-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value')
+    ]
+)
+def update_map(selected_place, selected_year, selected_tract):
+    fig = rent_chloropleth_map(selected_place, selected_year)
+
+    if selected_tract is not None:
+        fig_aux = census_tract_trace(selected_place, selected_year, selected_tract)
+        fig.add_trace(fig_aux.data[0])
+
+    return fig
+
+@app.callback(
+    Output('rent_plot', 'figure'),
+    [Input('place-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value')
+    ]
+)
+def update_plot(selected_place, selected_tract):
+    if selected_tract is None:
+        return None
+    else:
+        fig = census_tract_plot(selected_place, selected_tract)
+        return fig
+
+
+
+
+# ------------ EXECUTE THE APP ------------ #
+if __name__ == "__main__":
+    app.run(debug=False,
+
 
 # ------------ EXECUTE THE APP ------------ #
 if __name__ == '__main__':
