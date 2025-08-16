@@ -392,6 +392,7 @@ app = dash.Dash(__name__,
                                       "assets/style.css"
                                      ]
                )
+server=app.server
 
 app.layout = dbc.Container([
     # ------------ Title ------------ #
