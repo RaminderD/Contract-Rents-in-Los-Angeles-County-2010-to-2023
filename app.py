@@ -388,9 +388,10 @@ CherryRed_color = '#E3242B'
 
 # ------------ APP ------------ #
 app = dash.Dash(__name__,
-                external_stylesheets=[dbc.themes.SIMPLEX,
-                                      https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/css/style.css]
+                external_stylesheets=[dbc.themes.SIMPLEX],
+                assets_external_path='https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/css/style.css'
                )
+app.scripts.config.serve_locally = False
 
 app.layout = dbc.Container([
     # ------------ Title ------------ #
@@ -611,5 +612,3 @@ def update_plot(selected_place, selected_tract):
 # ------------ EXECUTE THE APP ------------ #
 if __name__ == '__main__':
     app.run(debug=False)
-
-app.css.append_css({"external_url": "https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/style.css"})
