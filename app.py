@@ -388,10 +388,8 @@ CherryRed_color = '#E3242B'
 
 # ------------ APP ------------ #
 app = dash.Dash(__name__,
-                external_stylesheets=[dbc.themes.SIMPLEX],
-                assets_external_path='https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/css/style.css'
+                external_stylesheets=[dbc.themes.SIMPLEX]
                )
-app.scripts.config.serve_locally = False
 
 app.layout = dbc.Container([
     # ------------ Title ------------ #
