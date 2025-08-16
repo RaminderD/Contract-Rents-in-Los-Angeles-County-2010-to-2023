@@ -364,7 +364,7 @@ Thank you to <u style='color:#800000;'><a href="https://www.wearelbre.org/" styl
 
 ### <b style='color:#800000;'>Author Information</b>
 Raminder Singh Dubb <br>
-GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County" style="color:#800000;">https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County</a></u>
+GitHub — <u style='color:#800000;'><a href="https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County/" style="color:rgb(128,0,0);">https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County</a></u>
 
 © 2025 Raminder Singh Dubb
 """
@@ -388,11 +388,7 @@ CherryRed_color = '#E3242B'
 
 # ------------ APP ------------ #
 app = dash.Dash(__name__,
-                external_stylesheets=[dbc.themes.SIMPLEX,
-                                     {'href': 'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/css/style.css',
-                                      'rel': 'stylesheet'
-                                     }
-                                     ]
+                external_stylesheets=[dbc.themes.SIMPLEX]
                )
 
 app.layout = dbc.Container([
