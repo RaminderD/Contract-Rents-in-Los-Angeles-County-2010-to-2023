@@ -24,8 +24,8 @@ data_path = "masterfiles/"
 stratified_map_dict = dict()
 years = range(2010, 2024)
 for year in years:
-    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/contract_rent_mastergeometry_{year}.json'
-    gdf = gpd.read_file(url_path)
+    file_path = f'assets/contract_rent_mastergeometry_{year}.json'
+    gdf = gpd.read_file(file_path)
 
     dummy_dict = dict()
     places = gdf['PLACE'].unique().tolist()
@@ -43,6 +43,35 @@ years = range(2010, 2024)
 for year in years:
     file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
     df = pd.read_csv(file_path)
+
+    # This is done because the ACS data caps values at $3501 (for data years
+    # after 2014) and $2001 (for data years 2014 and prior). Thus, if a certain
+    # metric indicates that number, it means the selected metric is obviously much
+    # higher.
+
+    # cc. Example: https://data.census.gov/table/ACSDT5Y2015.B25061?q=Renter+Costs&g=160XX00US0643000$1400000
+    # Compare the highest price bin in 2023 ('$3500 or more') to the highest price
+    # bin in 2014 ('$2000 or more') or any year prior to 2014 for that matter.
+
+    # As a side, it appears that max price was revised up from $2000 to $3500,
+    # corresponding to the transition from 2014 to 2015. This possibly reflects
+    # the sentiment that ACS data would not adequately capture the entire spectrum
+    # of variation in rents especially as they occur along the higher end of the spectrum.
+    # Nonetheless, it is curious as to why ACS data does not display or provide higher price bins
+    # for data years prior to 2014.
+    
+    df['B25058_001E_copy'] = df['B25058_001E']
+    df['Median'] = df['B25058_001E_copy']
+    df['75th'] = df['B25059_001E']
+    df['25th'] = df['B25057_001E']
+    columns = ['Median', '75th', '25th']
+    for col in columns:
+        df[col] = '$' + df[col].astype(str)
+        df[col] = df[col].str.replace('.0', '')
+        df.loc[df[col] == '$3501', col] = 'Not available. Exceeds $3500!'
+        df.loc[df[col] == '$nan', col] = 'Not Available!'
+        if year in [2010, 2011, 2012, 2013, 2014]:
+            df.loc[df[col] == '$2001', col] = 'Not available. Exceeds $2000!'
     
     dummy_dict = dict()
     places = df['PLACE'].unique().tolist()
@@ -59,38 +88,6 @@ for year in years:
 path = assets_path + "LosAngelesCounty_2020_FIPS.csv"
 LosAngelesCounty_2020_FIPS = pd.read_csv(path)
 LosAngelesCounty_dict = LosAngelesCounty_2020_FIPS.set_index('PLACE_FIPS')['PLACENAME'].to_dict()
-
-
-
-# Function for collecting all data into a dictionary stratified by Year and Place (in that order)
-def place_data(label_ID, path = data_path):
-    """
-    Collects info on all places across all years by ACS ID into a dictionary.
-    You can subset this dictionary as
-    dictionary[Year][Place]
-    in order to obtain values for a specific place in a specific year.
-    """
-    place_data_dict = dict()
-    
-    files = [file for file in sorted(os.listdir(path)) if label_ID in file]
-    years = []
-    for file in files:
-        date = file.split('_', 3)[-1]
-        date = date.split('.csv')[0]
-        years.append(int(date))
-
-    for file, year in zip(files, years):
-        filepath = path + file
-        df = pd.read_csv(filepath)
-        
-        placeholder_dict = dict()
-        for place in df['PLACE'].unique().tolist():
-            mask = df.PLACE == place
-            placeholder_dict[place] = df[mask]
-
-        place_data_dict[year] = deepcopy(placeholder_dict)
-
-    return place_data_dict
 
 
 
@@ -134,20 +131,6 @@ def tract_dataframe(place, tract):
             tract_data = pd.concat([tract_data, data_row])
         else:
             None
-
-    tract_data['B25058_001E_copy'] = tract_data['B25058_001E']
-    tract_data['Median'] = tract_data['B25058_001E_copy']
-    tract_data['75th'] = tract_data['B25059_001E']
-    tract_data['25th'] = tract_data['B25057_001E']
-    columns = ['Median', '75th', '25th']
-    for col in columns:
-        tract_data[col] = '$' + tract_data[col].astype(str)
-        tract_data[col] = tract_data[col].str.replace('.0', '')
-        tract_data.loc[tract_data[col] == '$3501', col] = 'Not available. Exceeds $3500!'
-        tract_data.loc[tract_data[col] == '$nan', col] = 'Not Available!'
-        years = [2010, 2011, 2012, 2013, 2014]
-        for year in years:
-            tract_data.loc[(tract_data[col] == '$2001') & (tract_data['YEAR'] == year), col] = 'Not available. Exceeds $2000!'
 
     return tract_data
 
@@ -371,7 +354,7 @@ GitHub — <u><a href="https://github.com/ramindersinghdubb">https://github.com/
 
 # ------------ Initialization ------------ #
 masterfile_place_year_dict = places_year_dict('contract_rent_masterfile')
-masterfile_place_data = place_data('contract_rent_masterfile')
+
 
 # ------------ Colors ------------ #
 Cream_color = '#FAE8E0'
@@ -538,7 +521,7 @@ def set_year_value(options):
     ]
 )
 def set_tracts_options(selected_place, selected_year):
-    df = masterfile_place_data[selected_year][selected_place]
+    df = stratified_file_dict[selected_year][selected_place]
     options = list(df[~df['B25058_001E'].isna()]['NAME'])
     return [{'label': i, 'value': i} for i in options]
 
