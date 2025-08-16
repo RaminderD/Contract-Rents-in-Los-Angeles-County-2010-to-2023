@@ -388,7 +388,9 @@ CherryRed_color = '#E3242B'
 
 # ------------ APP ------------ #
 app = dash.Dash(__name__,
-                external_stylesheets=[dbc.themes.SIMPLEX]
+                external_stylesheets=[dbc.themes.SIMPLEX,
+                                      "assets/style.css"
+                                     ]
                )
 
 app.layout = dbc.Container([
