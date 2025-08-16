@@ -325,7 +325,7 @@ app.layout = dbc.Container([
                            )
     ]
             )
-], style = {'background-color': LightBrown_color, "padding": "0px 0px 20px 0px",})
+], style = {'background-color': '#FFFFFF', "padding": "0px 0px 20px 0px",})
 
 
 # ------------ EXECUTE THE APP ------------ #
