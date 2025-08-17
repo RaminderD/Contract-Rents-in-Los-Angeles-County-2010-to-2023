@@ -2,6 +2,7 @@
 import dash
 from dash import dcc, html, clientside_callback, ClientsideFunction
 from dash.dependencies import Output, Input, State
+from dash_extensions import Purify
 import dash_bootstrap_components as dbc
 import feffery_markdown_components as fmc
 
