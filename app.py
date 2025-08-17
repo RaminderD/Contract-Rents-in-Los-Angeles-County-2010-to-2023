@@ -20,21 +20,6 @@ assets_path = "assets/"
 
 data_path = "masterfiles/"
 
-# Create a stratified dictionary for mastergeometries, indexed by year and place in that order
-stratified_map_dict = dict()
-years = range(2010, 2024)
-for year in years:
-    file_path = f'assets/contract_rent_mastergeometry_{year}.json'
-    gdf = gpd.read_file(file_path)
-
-    dummy_dict = dict()
-    places = gdf['PLACE'].unique().tolist()
-    for place in places:
-        mask = gdf['PLACE'] == place
-        dummy_dict[place] = gdf[mask]
-
-    stratified_map_dict[year] = deepcopy(dummy_dict)
-
 
 # Create a stratified dictionary for masterfiles, indexed by year and place in that order
 stratified_file_dict = dict()
@@ -43,6 +28,12 @@ years = range(2010, 2024)
 for year in years:
     file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
     df = pd.read_csv(file_path)
+    map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
+    gdf = gpd.read_file(map_path)
+    df = pd.merge(df, gdf[['GEO_ID','INTPTLAT','INTPTLON']], on='GEO_ID', how='left')
+
+    # For the trace
+    df['dummy'] = 1
 
     # This is done because the ACS data caps values at $3501 (for data years
     # after 2014) and $2001 (for data years 2014 and prior). Thus, if a certain
@@ -81,6 +72,28 @@ for year in years:
 
     stratified_file_dict[year] = deepcopy(dummy_dict)
 
+# Masterfile
+masterfile = pd.DataFrame()
+years = range(2010, 2024)
+
+for year in years:
+    file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
+    df = pd.read_csv(file_path)
+    df['dummy'] = 1
+    df['B25058_001E_copy'] = df['B25058_001E']
+    df['Median'] = df['B25058_001E_copy']
+    df['75th'] = df['B25059_001E']
+    df['25th'] = df['B25057_001E']
+    columns = ['Median', '75th', '25th']
+    for col in columns:
+        df[col] = '$' + df[col].astype(str)
+        df[col] = df[col].str.replace('.0', '')
+        df.loc[df[col] == '$3501', col] = 'Not available. Exceeds $3500!'
+        df.loc[df[col] == '$nan', col] = 'Not Available!'
+        if year in [2010, 2011, 2012, 2013, 2014]:
+            df.loc[df[col] == '$2001', col] = 'Not available. Exceeds $2000!'
+    masterfile = pd.concat([masterfile, df], ignore_index = True)
+
 
 # ------------ UTILITY FUNCTIONS ------------ #
 
@@ -91,24 +104,19 @@ LosAngelesCounty_dict = LosAngelesCounty_2020_FIPS.set_index('PLACE_FIPS')['PLAC
 
 
 
-# Function for creating a dictionary where the years (keys) hold lists of places tabulated for that year
-def places_year_dict(label_ID, path = data_path):
-    """
-    Some places in Los Angeles County don't have any information for certain years.
-    Using the cleaned data, we extract the names of places which do have data for a
-    given year.
-    """
-    year_data_dict = dict()
-    
-    files = [file for file in sorted(os.listdir(path)) if label_ID in file]
-    for file in files:
-        file_path = path + file
-        df = pd.read_csv(file_path)
-        places = df['PLACE'].unique().tolist()
-        year = df.at[0, 'YEAR']
-        year_data_dict[year] = places
+# Function for creating a dictionary where the places (keys) hold lists of dictionaries for our year dropdown
+def place_year_dictionary():
+    place_year_dict = dict()
 
-    return year_data_dict
+    places = masterfile['PLACE'].unique().tolist()
+    masterfile['NAME'].unique
+    for place in places:
+        df = masterfile[masterfile['PLACE'] == place]
+        list_of_years = df['YEAR'].unique().tolist()
+        dummy_dict = [{'label': year, 'value': year} for year in list_of_years]
+        place_year_dict[place] = dummy_dict
+
+    return place_year_dict
 
 
 
@@ -137,10 +145,10 @@ def tract_dataframe(place, tract):
 # ------------ GEOSPATIAL CHLOROPLETH MAP FUNCTION ------------ #
 def rent_chloropleth_map(place, year):
     df = stratified_file_dict[year][place]
-    gdf = stratified_map_dict[year][place]
-    gdf_dict = json.loads(gdf.to_json())
-    center_lat = round(gdf.INTPTLAT.mean(), 5)
-    center_lon = round(gdf.INTPTLON.mean(), 5)
+    center_lat = round(df.INTPTLAT.mean(), 5)
+    center_lon = round(df.INTPTLON.mean(), 5)
+    place_string = place.replace(" ", "")
+    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/{year}/contract_rent_mastergeometry_{year}_{place_string}.json'
     
     hovertext = """
 <b style='font-size:16px;'>%{customdata[2]}</b><br>
@@ -154,7 +162,7 @@ Median Contract Rent (%{customdata[0]}): <br> <b style='color:#800000; font-size
     fig = go.Figure()
     
     fig.add_trace(
-        go.Choroplethmap(geojson      = gdf_dict,
+        go.Choroplethmap(geojson      = url_path,
                          customdata   = df[['YEAR', 'PLACE', 'NAME', 'B25058_001E', 'Median', '25th', '75th']],
                          locations    = df['GEO_ID'],
                          featureidkey = 'properties.GEO_ID',
@@ -202,17 +210,13 @@ Median Contract Rent (%{customdata[0]}): <br> <b style='color:#800000; font-size
 def census_tract_trace(place, year, census_tract):
     df = stratified_file_dict[year][place]
     df = df[df.NAME == census_tract]
-    
-    gdf = stratified_map_dict[year][place]
-    gdf = gdf[gdf.NAME == census_tract]
-    gdf_dict = json.loads(gdf.to_json())
-
-    df['dummy'] = 1
+    place_string = place.replace(" ", "")
+    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/{year}/contract_rent_mastergeometry_{year}_{place_string}.json'
 
     fig_aux = go.Figure()
 
     fig_aux.add_trace(
-        go.Choroplethmap(geojson      = gdf_dict,
+        go.Choroplethmap(geojson      = url_path,
                          featureidkey = 'properties.GEO_ID',
                          locations    = df['GEO_ID'],
                          z            = df['dummy'],
@@ -353,7 +357,7 @@ GitHub — <u><a href="https://github.com/ramindersinghdubb">https://github.com/
 """
 
 # ------------ Initialization ------------ #
-masterfile_place_year_dict = places_year_dict('contract_rent_masterfile')
+place_year_dict = place_year_dictionary()
 
 
 # ------------ Colors ------------ #
@@ -376,6 +380,8 @@ app = dash.Dash(__name__,
                                      ]
                )
 server=app.server
+
+
 
 app.layout = dbc.Container([
     # ------------ Title ------------ #
@@ -411,13 +417,13 @@ app.layout = dbc.Container([
                }
             ),
     # ------------ Labels for dropdowns (discarded) ------------ #
-
+    
     # ------------ Dropdowns ------------ #
     html.Div([
         html.Div([
             dcc.Dropdown(id='place-dropdown',
                          placeholder='Select a place',
-                         options=[{'label': p, 'value': p} for p in masterfile_place_year_dict[2023]],
+                         options=[{'label': p, 'value': p} for p in list(place_year_dict.keys())],
                          value='Long Beach',
                          clearable=False
                         )
@@ -456,7 +462,7 @@ app.layout = dbc.Container([
             dbc.Row([
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(id = "map-title",
+                    dbc.CardHeader(Purify(id = "map-title"),
                                    style = {'background-color': MaroonRed_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -467,7 +473,7 @@ app.layout = dbc.Container([
             ]),
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(id = "plot-title",
+                    dbc.CardHeader(Purify(id = "plot-title"),
                                    style = {'background-color': Teal_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -491,20 +497,59 @@ app.layout = dbc.Container([
                                              }
                            )
     ]
-            )
+            ),
+    # ------------ Data ------------ #
+    dcc.Store(id='masterfile_data',
+              data=masterfile.to_dict("records")
+             ),
+    dcc.Store(id='place_year_dict',
+              data=place_year_dict
+             )
+
 ], style = {'background-color': LightBrown_color, "padding": "0px 0px 20px 0px",})
 
+
+
 # ------------ CALLBACKS ------------ #
+#
+# Summary (inputs -> outputs)
+#
+#
+# Dropdowns:
+#  place value -> year options
+#  year options -> default year value
+#  place options, year options, map ClickData -> census tract options
+#  click data -> census tract value
+#
+# Titles:
+#  place value, year value -> map title
+#  place value, census tract value -> plot title
+#
+# Graphs:
+#  place value, year value, census tract value -> map
+#  place value, census tract value -> plot
+#
+# ----------------------------------- #
+
 
 # ------------ Dropdowns ------------ #
-@app.callback(
+
+
+# Year tract options
+app.clientside_callback(
+    """
+    function(selected_place, place_year_dict) {
+        return place_year_dict[selected_place]
+    }
+    """,
     Output('year-dropdown', 'options'),
     [Input('place-dropdown', 'value'),
+     Input('place_year_dict', 'data')
     ]
 )
-def set_years_options(selected_place):
-    return [{'label': k, 'value': k} for k, v in masterfile_place_year_dict.items() if selected_place in v]
 
+
+# Year tract value
 @app.callback(
     Output('year-dropdown', 'value'),
     [Input('year-dropdown', 'options')]
@@ -514,6 +559,9 @@ def set_year_value(options):
     value_label = options[index]['label']
     return value_label
 
+
+
+# Census tract options
 @app.callback(
     Output('census-tract-dropdown', 'options'),
     [Input('place-dropdown', 'value'),
@@ -525,41 +573,57 @@ def set_tracts_options(selected_place, selected_year):
     options = list(df[~df['B25058_001E'].isna()]['NAME'])
     return [{'label': i, 'value': i} for i in options]
 
-@app.callback(
+
+
+# Census tract value based on click data
+app.clientside_callback(
+    """
+    function(clickData) {
+        return clickData['points'][0]['customdata'][2]
+    }
+    """,
     Output('census-tract-dropdown', 'value'),
     Input('chloropleth_map', 'clickData')
 )
-def update_census_tract_dropdown(clicked_data):
-    if clicked_data:
-        selected_tract = clicked_data['points'][0]['customdata'][2]
-    return selected_tract
+
 
 
 # ------------ Titles ------------ #
-@app.callback(
-    Output('map-title', 'children'),
-    [Input('place-dropdown', 'value'),
-    Input('year-dropdown', 'value'),]
-)
-def set_map_title(selected_place, selected_year):
-    if (selected_year == None):
-        return [html.B(f"Please select a year to view rents in {selected_place}!")]
-    else:
-        return [html.B('Median Contract Rents'), ' in ', html.B(f'{selected_place}'), ' by Census Tract, ', html.B(f'{selected_year}')]
 
-@app.callback(
-    Output('plot-title', 'children'),
+# Map title
+app.clientside_callback(
+    """
+    function(selected_place, selected_year) {
+        return `<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, <b>${selected_year}</b>`;
+    }
+    """,
+    Output('map-title', 'html'),
     [Input('place-dropdown', 'value'),
-     Input('census-tract-dropdown', 'value')]
+     Input('year-dropdown', 'value')
+    ]
 )
-def set_plot_title(selected_place, selected_tract):
-    if (selected_tract == None):
-        return [html.B('Please click on a tract.')]
-    else:
-        return [f' {selected_place}, ', html.B(f'{selected_tract}')]
+
+# Plot title
+app.clientside_callback(
+    """
+    function(selected_place, selected_tract) {
+        if (selected_tract == undefined){
+            return `<b>Please click on a tract.</b>`;
+        } else {
+            return `${selected_place}, <b>${selected_tract}</b>`;
+        }
+    }
+    """,
+    Output('plot-title', 'html'),
+    [Input('place-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value')
+    ]
+)
 
 
 # ------------ Graphs ------------ #
+
+# Choropleth map
 @app.callback(
     Output('chloropleth_map', 'figure'),
     [Input('place-dropdown', 'value'),
@@ -576,6 +640,7 @@ def update_map(selected_place, selected_year, selected_tract):
 
     return fig
 
+# Plot
 @app.callback(
     Output('rent_plot', 'figure'),
     [Input('place-dropdown', 'value'),
@@ -588,7 +653,6 @@ def update_plot(selected_place, selected_tract):
     else:
         fig = census_tract_plot(selected_place, selected_tract)
         return fig
-
 
 
 
