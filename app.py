@@ -565,16 +565,21 @@ app.clientside_callback(
 
 
 # Census tract options
-@app.callback(
+app.clientside_callback(
+    """
+    function(selected_place, selected_year, masterfile_data) {
+        var selected_place = `${selected_place}`;
+        var options = masterfile_data.filter(x => x['YEAR'] === selected_year && x['PLACE'] === selected_place);
+        var tract_options = options.map(item => { return item.NAME });
+        return tract_options
+    }
+    """,
     Output('census-tract-dropdown', 'options'),
     [Input('place-dropdown', 'value'),
-     Input('year-dropdown', 'value')
+     Input('year-dropdown', 'value'),
+     Input('masterfile_data', 'data')
     ]
 )
-def set_tracts_options(selected_place, selected_year):
-    df = stratified_file_dict[selected_year][selected_place]
-    options = list(df[~df['B25058_001E'].isna()]['NAME'])
-    return [{'label': i, 'value': i} for i in options]
 
 
 
