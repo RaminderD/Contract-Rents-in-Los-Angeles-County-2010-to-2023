@@ -463,7 +463,7 @@ app.layout = dbc.Container([
             dbc.Row([
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(children = Purify(id = "map-title"),
+                    dbc.CardHeader(id = "map-title",
                                    style = {'background-color': MaroonRed_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -474,7 +474,7 @@ app.layout = dbc.Container([
             ]),
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(children = Purify(id = "plot-title"),
+                    dbc.CardHeader(id = "plot-title",
                                    style = {'background-color': Teal_color,
                                             'color': '#FFFFFF'}
                                   ),
