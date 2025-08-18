@@ -550,7 +550,7 @@ app.clientside_callback(
 # Choropleth map
 app.clientside_callback(
     """
-    function(selected_place, selected_year, masterfile_data){
+    function(selected_place, selected_year, selected_tract, masterfile_data){
         var selected_place = `${selected_place}`;
         var selected_year = Number(selected_year);
         var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['YEAR'] === selected_year);
