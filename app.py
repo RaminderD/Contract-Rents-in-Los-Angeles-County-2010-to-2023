@@ -463,7 +463,7 @@ app.layout = dbc.Container([
             dbc.Row([
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(children = html.Div(Purify(id = "map-title")),
+                    dbc.CardHeader(children = [html.B("Median Contract Rents"), " in ", html.B(id="map-title1"), " by Census Tract, ", html.B(id="map-title2")],
                                    style = {'background-color': MaroonRed_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -596,10 +596,11 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return `<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, <b>${selected_year}</b>`;
+        return `${selected_place}`, `${selected_year}`;
     }
     """,
-    Output('map-title', 'html'),
+    Output('map-title1', 'children'),
+    Output('map_title2', 'children'),
     [Input('place-dropdown', 'value'),
      Input('year-dropdown', 'value')
     ]
