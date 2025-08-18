@@ -595,10 +595,10 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return `<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, </b>${selected_year}</b>`;
+        return html.B(`Median Contract Rents in ${selected_place} by Census Tract, ${selected_year}`);
     }
     """,
-    Output('map-title', 'html'),
+    Output('map-title', 'children'),
     [Input('place-dropdown', 'value'),
      Input('year-dropdown', 'value')
     ]
@@ -609,13 +609,13 @@ app.clientside_callback(
     """
     function(selected_place, selected_tract) {
         if (selected_tract == undefined){
-            return `<b>Please click on a tract</b>`;
+            return `Please click on a tract.`;
         } else {
-            return `${selected_place}, <b>${selected_tract}</b>`;
+            return `${selected_place}, ${selected_tract}`;
         }
     }
     """,
-    Output('plot-title', 'html'),
+    Output('plot-title', 'children'),
     [Input('place-dropdown', 'value'),
      Input('census-tract-dropdown', 'value')
     ]
