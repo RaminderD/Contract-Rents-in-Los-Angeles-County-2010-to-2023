@@ -607,9 +607,9 @@ app.clientside_callback(
 
         var strings = my_array.map(function(item) {
             return "<b style='font-size:16px;'>" + item['NAME'] + "</b><br>" + item['PLACE'] + ", Los Angeles County<br><br>"
-            + "Median Contract Rent (" + item['YEAR'] + "): <br> <b style='color:#800000; font-size:14px;'>" + item['Median'] + "</b> <br><br>"
-            + "25th Percentile Contract Rent (" + item['YEAR'] + "): <br> <b style='color:#800000; font-size:14px;'>" + item['25th'] + "</b> <br><br>"
-            + "75th Percentile Contract Rent (" + item['YEAR'] + "): <br> <b style='color:#800000; font-size:14px;'>" + item['75th'] + "</b> <br><br><extra></extra>";
+            + "Median Contract Rent (" + item['YEAR'] + "): <br><b style='color:#800000; font-size:14px;'>" + item['Median'] + "</b> <br><br>"
+            + "25th Percentile Contract Rent (" + item['YEAR'] + "): <br><b style='color:#800000; font-size:14px;'>" + item['25th'] + "</b> <br><br>"
+            + "75th Percentile Contract Rent (" + item['YEAR'] + "): <br><b style='color:#800000; font-size:14px;'>" + item['75th'] + "</b> <br><br><extra></extra>";
             });
     
     
