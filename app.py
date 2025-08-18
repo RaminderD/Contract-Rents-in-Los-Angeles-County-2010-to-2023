@@ -595,7 +595,8 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return `Median Contract Rents in ${selected_place} by Census Tract, ${selected_year}`;
+        const maptitle = ["Median Contract Rents in ", html.B(`${selected_place}`), " by Census Tract, ", html.B(`${selected_year}`)];
+        return document.getElementById("map-title").innerHTML = maptitle;
     }
     """,
     Output('map-title', 'children'),
