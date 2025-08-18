@@ -551,14 +551,16 @@ app.clientside_callback(
 
 
 # Year tract value
-@app.callback(
+app.clientside_callback(
+    """
+    function(options) {
+        var opt = options.find(x => x['label'] === 2023);
+        return opt['label']
+    }
+    """,
     Output('year-dropdown', 'value'),
-    [Input('year-dropdown', 'options')]
+    Input('year-dropdown', 'options')
 )
-def set_year_value(options):
-    index = next(index for (index, subdic) in enumerate(options) if subdic['label'] == 2023)
-    value_label = options[index]['label']
-    return value_label
 
 
 
