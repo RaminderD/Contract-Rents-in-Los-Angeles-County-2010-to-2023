@@ -596,11 +596,12 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return [`${selected_place}`, `${selected_year}`];
+        return [selected_place, selected_year];
     }
     """,
-    Output('map-title1', 'children'),
-    Output('map_title2', 'children'),
+    [Output('map-title1', 'children'),
+     Output('map_title2', 'children')
+    ],
     [Input('place-dropdown', 'value'),
      Input('year-dropdown', 'value')
     ]
