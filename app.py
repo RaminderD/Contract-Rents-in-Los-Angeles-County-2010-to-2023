@@ -118,85 +118,6 @@ def place_year_dictionary():
 
 
 
-# Function that returns a dataframe consisting of the census tract of interest
-def tract_dataframe(place, tract):
-    years = list(stratified_file_dict.keys())
-    data_years = []
-    for year in years:
-        places = list(stratified_file_dict[year].keys())
-        if place in places:
-            data_years.append(year)
-        else:
-            None
-            
-    tract_data = pd.DataFrame()
-    for year in data_years:
-        df = stratified_file_dict[year][place]
-        if np.any(df.NAME == tract):
-            data_row = df[df.NAME == tract]
-            tract_data = pd.concat([tract_data, data_row])
-        else:
-            None
-
-    return tract_data
-
-
-# ------------ CENSUS TRACT PLOT FUNCTION ------------ #
-def census_tract_plot(place, census_tract):
-    tract_data = tract_dataframe(place, census_tract)
-
-    hovertext = """
-<b style='font-size:16px;'>%{customdata[0]}</b><br>
-%{customdata[1]}, %{customdata[2]} <br><br>
-Median Contract Rent: <br> <b style='color:#800000; font-size:14px;'>%{customdata[3]}</b> <br><br>
-25th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>%{customdata[4]}</b> <br><br>
-75th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>%{customdata[5]}</b>
-<extra></extra>
-    """
-
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Scatter(x            = list(tract_data['YEAR']),
-                   y            = list(tract_data['B25058_001E']),
-                   customdata   = tract_data[['YEAR', 'NAME', 'PLACE', 'Median', '25th', '75th']],
-                   mode         = 'lines+markers',
-                   line         = {'color': '#800000'},
-                   hoverlabel   = {'bgcolor': '#FAFAFA', # Very light gray
-                                   'bordercolor': '#BEBEBE', # Light gray
-                                   'font': {'color': '#020403'}
-                                  },
-                   hovertemplate = hovertext,
-                   marker_size   = 10,
-                   marker_line_width = 2,
-                   marker_line_color = '#F5FBFF',
-                  )
-    )
-
-    fig.update_layout(font_color       = '#020403',
-                      hoverlabel_align = 'left',
-                      margin           = {"b": 30, "t": 40},
-                      autosize         = True,
-                      uirevision       = True,
-                      paper_bgcolor    = '#FEF9F3',
-                      plot_bgcolor     = '#FEF9F3',
-                      title = {'text': f'Median Contract Rents, {tract_data['YEAR'].min()} to {tract_data['YEAR'].max()}',
-                              },
-                      xaxis = {'title_text': 'Year',
-                               'showgrid': False,
-                               'range': [tract_data['YEAR'].min()-0.5, tract_data['YEAR'].max()+0.5],
-                               'tickvals': [*range(int(tract_data['YEAR'].min()), int(tract_data['YEAR'].max()+1))],
-                              },
-                      yaxis = {'title_text': 'Median Contract Rents ($)',
-                               'tickprefix': '$',
-                               'gridcolor': '#E0E0E0',
-                               'ticklabelstandoff': 5,
-                               'title_standoff': 15,
-                              },
-                     )
-
-    return fig
-
 # ------------ CONTAINERS AND STRINGS------------ #
 
 # Container for geospatial choropleth map
@@ -678,7 +599,7 @@ app.clientside_callback(
             var layout = {
                 'font': {'color': '#020403'},
                 'hoverlabel': {'align': 'left'},
-                'margin': {'b': 40, 't': 40},
+                'margin': {'b': 40, 't': 40, 'r': 20},
                 'autosize': true,
                 'uirevision': true,
                 'paper_bgcolor': '#FEF9F3',
