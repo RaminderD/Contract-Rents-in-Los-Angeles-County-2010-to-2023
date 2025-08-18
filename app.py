@@ -497,7 +497,7 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(clickData) {
-        return clickData['points'][0]['customdata'][2]
+        return clickData['points']['0']['customdata']
     }
     """,
     Output('census-tract-dropdown', 'value'),
