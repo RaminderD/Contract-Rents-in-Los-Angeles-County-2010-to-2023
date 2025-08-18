@@ -463,7 +463,7 @@ app.layout = dbc.Container([
             dbc.Row([
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(Purify(id = "map-title"),
+                    dbc.CardHeader(children = Purify(id = "map-title"),
                                    style = {'background-color': MaroonRed_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -474,7 +474,7 @@ app.layout = dbc.Container([
             ]),
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(Purify(id = "plot-title"),
+                    dbc.CardHeader(children = Purify(id = "plot-title"),
                                    style = {'background-color': Teal_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -595,7 +595,7 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return console.log(`<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, </b>${selected_year}</b>`);
+        return `<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, </b>${selected_year}</b>`;
     }
     """,
     Output('map-title', 'html'),
@@ -609,9 +609,9 @@ app.clientside_callback(
     """
     function(selected_place, selected_tract) {
         if (selected_tract == undefined){
-            return console.log(`<b>Please click on a tract</b>`);
+            return `<b>Please click on a tract</b>`;
         } else {
-            return console.log(`${selected_place}, <b>${selected_tract}</b>`);
+            return `${selected_place}, <b>${selected_tract}</b>`;
         }
     }
     """,
