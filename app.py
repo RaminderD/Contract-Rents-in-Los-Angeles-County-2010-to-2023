@@ -463,7 +463,7 @@ app.layout = dbc.Container([
             dbc.Row([
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(id = "map-title",
+                    dbc.CardHeader(Purify(id = "map-title"),
                                    style = {'background-color': MaroonRed_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -474,7 +474,7 @@ app.layout = dbc.Container([
             ]),
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(id = "plot-title",
+                    dbc.CardHeader(Purify(id = "plot-title"),
                                    style = {'background-color': Teal_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -591,32 +591,33 @@ app.clientside_callback(
 
 # ------------ Titles ------------ #
 
+
 # Map title
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        const maptitle = ["Median Contract Rents in ", html.B(`${selected_place}`), " by Census Tract, ", html.B(`${selected_year}`)];
-        return document.getElementById("map-title").innerHTML = maptitle;
+        return `<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, <b>${selected_year}</b>`;
     }
     """,
-    Output('map-title', 'children'),
+    Output('map-title', 'html'),
     [Input('place-dropdown', 'value'),
      Input('year-dropdown', 'value')
     ]
 )
+
 
 # Plot title
 app.clientside_callback(
     """
     function(selected_place, selected_tract) {
         if (selected_tract == undefined){
-            return `Please click on a tract.`;
+            return `<b>Please click on a tract.</b>`;
         } else {
-            return `${selected_place}, ${selected_tract}`;
+            return `${selected_place}, <b>${selected_tract}</b>`;
         }
     }
     """,
-    Output('plot-title', 'children'),
+    Output('plot-title', 'html'),
     [Input('place-dropdown', 'value'),
      Input('census-tract-dropdown', 'value')
     ]
