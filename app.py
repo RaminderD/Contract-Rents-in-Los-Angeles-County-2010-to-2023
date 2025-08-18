@@ -596,7 +596,7 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return `${selected_place}`, `${selected_year}`;
+        return selected_place, selected_year;
     }
     """,
     Output('map-title1', 'children'),
