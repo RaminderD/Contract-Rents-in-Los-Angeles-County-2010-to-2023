@@ -595,7 +595,7 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return `<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, </b>${selected_year}</b>`;
+        return console.log(`<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, </b>${selected_year}</b>`);
     }
     """,
     Output('map-title', 'html'),
@@ -609,9 +609,9 @@ app.clientside_callback(
     """
     function(selected_place, selected_tract) {
         if (selected_tract == undefined){
-            return `<b>Please click on a tract</b>`;
+            return console.log(`<b>Please click on a tract</b>`);
         } else {
-            return `${selected_place}, <b>${selected_tract}</b>`;
+            return console.log(`${selected_place}, <b>${selected_tract}</b>`);
         }
     }
     """,
