@@ -641,18 +641,63 @@ app.clientside_callback(
 )
 
 # Plot
-@app.callback(
+app.clientside_callback(
+    """
+    function(selected_place, selected_tract, masterfile_data){
+        if (selected_tract != undefined){
+            var selected_place = `${selected_place}`;
+            var selected_tract = `${selected_tract}`;
+            var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['NAME'] === selected_tract);
+            
+            var x_array = my_array.map(({YEAR})=>YEAR);
+            var y_array = my_array.map(({B25058_001E})=>B25058_001E);
+    
+            var customdata_array = my_array.map(({NAME}) => NAME);
+    
+            var strings = my_array.map(function(item) {
+                return "<b style='font-size:16px;'>" + item['YEAR'] + "</b><br>" + item['NAME'] + ", " + item['PLACE'] + " <br><br>" +
+                "Median Contract Rent: <br> <b style='color:#800000; font-size:14px;'>" + item['Median'] + "</b> <br><br>" +
+                "25th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>" + item['25th'] + "</b> <br><br>" +
+                "75th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>" + item['75th'] + "</b> <br><br><extra></extra>";
+                });
+        
+        
+        
+            var data = [{
+                'type': 'scatter',
+                'x': x_array,
+                'y': y_array,
+                'mode': 'lines+markers',
+                'line': {'color': '#800000'},
+                'marker': {'size': 10, 'line': {'width': 2, 'color': '#F5FBFF'}},
+                'text': strings,
+                'hoverlabel': {'bgcolor': '#FAFAFA', 'bordercolor': '#BEBEBE', 'font': {'color': '#020403'}},
+                'hovertemplate': '%{text}'
+            }];
+        
+            var layout = {
+                'font': {'color': '#020403'},
+                'hoverlabel': {'align': 'left'},
+                'margin': {'b': 40, 't': 40},
+                'autosize': true,
+                'uirevision': true,
+                'paper_bgcolor': '#FEF9F3',
+                'plot_bgcolor': '#FEF9F3',
+                'title': {'text': `Median Contract Rents, ${Math.min(...x_array)} to ${Math.max(...x_array)}`, 'x': 0.05},
+                'xaxis': {'title': {'text': 'Year', 'ticklabelstandoff': 10}, 'showgrid': false},
+                'yaxis': {'title': {'text': 'Median Contract Rents ($)', 'standoff': 15}, 'tickprefix': '$', 'gridcolor': '#E0E0E0', 'ticklabelstandoff': 5},
+            };
+            
+            return {'data': data, 'layout': layout};
+        }
+    }
+    """,
     Output('rent_plot', 'figure'),
     [Input('place-dropdown', 'value'),
-     Input('census-tract-dropdown', 'value')
+     Input('census-tract-dropdown', 'value'),
+     Input('masterfile_data', 'data')
     ]
 )
-def update_plot(selected_place, selected_tract):
-    if selected_tract is None:
-        return None
-    else:
-        fig = census_tract_plot(selected_place, selected_tract)
-        return fig
 
 
 
