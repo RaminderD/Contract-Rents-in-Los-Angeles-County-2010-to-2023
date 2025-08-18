@@ -595,7 +595,7 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return html.B(`Median Contract Rents in ${selected_place} by Census Tract, ${selected_year}`);
+        return `Median Contract Rents in ${selected_place} by Census Tract, ${selected_year}`;
     }
     """,
     Output('map-title', 'children'),
