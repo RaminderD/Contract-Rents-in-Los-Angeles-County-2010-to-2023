@@ -73,13 +73,16 @@ for year in years:
 
     stratified_file_dict[year] = deepcopy(dummy_dict)
 
-# Masterfile
+# ------------ MASTERFILE FOR DCC.STORE() ------------ #
 masterfile = pd.DataFrame()
 years = range(2010, 2024)
 
 for year in years:
     file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
     df = pd.read_csv(file_path)
+    map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
+    gdf = gpd.read_file(map_path)
+    df = pd.merge(df, gdf[['GEO_ID','INTPTLAT','INTPTLON']], on='GEO_ID', how='left')
     df['dummy'] = 1
     df['B25058_001E_copy'] = df['B25058_001E']
     df['Median'] = df['B25058_001E_copy']
@@ -638,21 +641,75 @@ app.clientside_callback(
 # ------------ Graphs ------------ #
 
 # Choropleth map
-@app.callback(
+app.clientside_callback(
+    """
+    function(selected_place, selected_year, masterfile_data){
+        var selected_place = `${selected_place}`;
+        var selected_year = Number(selected_year);
+        var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['YEAR'] === selected_year);
+        
+        var place_string = selected_place.replaceAll(' ','');
+        var url_path = `https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/${selected_year}/contract_rent_mastergeometry_${selected_year}_${place_string}.json`;
+
+        var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['YEAR'] === selected_year);
+        
+        var locations_array = my_array.map(({GEO_ID}) => GEO_ID);
+        var z_array = my_array.map(({B25058_001E})=>B25058_001E);
+        
+        var long_array = my_array.map(({INTPTLON})=>INTPTLON);
+        var long_center = long_array.reduce((a, b) => a + b) / long_array.length;
+        const lon_center = parseFloat(long_center.toFixed(5));
+        
+        var lat_array = my_array.map(({INTPTLAT})=>INTPTLAT);
+        var lati_center = lat_array.reduce((a, b) => a + b) / lat_array.length;
+        const lat_center = parseFloat(lati_center.toFixed(5));
+
+        var strings = my_array.map(function(item) {
+            return "<b style='font-size:16px;'>" + item['NAME'] + "</b><br>" + item['PLACE'] + ", Los Angeles County<br><br>"
+            + "Median Contract Rent (" + item['YEAR'] + "): <br> <b style='color:#800000; font-size:14px;'>" + item['Median'] + "</b> <br><br>"
+            + "25th Percentile Contract Rent (" + item['YEAR'] + "): <br> <b style='color:#800000; font-size:14px;'>" + item['25th'] + "</b> <br><br>"
+            + "75th Percentile Contract Rent (" + item['YEAR'] + "): <br> <b style='color:#800000; font-size:14px;'>" + item['75th'] + "</b> <br><br><extra></extra>";
+            });
+    
+    
+    
+        var data = [{
+            'type': 'choroplethmap',
+            'geojson': url_path,
+            'locations': locations_array,
+            'featureidkey': 'properties.GEO_ID',
+            'colorscale': 'YlOrRd',
+            'reversescale': true,
+            'z': z_array,
+            'zmin': 0, 'zmax': 3500,
+            'marker': {'line': {'color': '#020403', 'width': 1.75}, 'opacity': 0.4},
+            'text': strings,
+            'colorbar': {'outlinewidth': 2,
+                         'ticklabelposition': 'outside bottom',
+                         'tickprefix': '$',
+                         'title': {'font': {'color': '#020403', 'weight': 500}, 'text': 'Median Contract<br>Rents ($)'}},
+            'hoverlabel': {'bgcolor': '#FAFAFA', 'bordercolor': '#BEBEBE', 'font': {'color': '#020403'}},
+            'hovertemplate': '%{text}'
+        }];
+    
+        var layout = {
+            'autosize': true,
+            'hoverlabel': {'align': 'left'},
+            'map': {'center': {'lat': lat_center, 'lon': lon_center}, 'style': 'streets', 'zoom': 10.5},
+            'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
+            'paper_bgcolor': '#FEF9F3',
+            'plot_bgcolor': '#FEF9F3',
+        };
+    
+        return {'data': data, 'layout': layout};
+    }
+    """,
     Output('chloropleth_map', 'figure'),
     [Input('place-dropdown', 'value'),
      Input('year-dropdown', 'value'),
-     Input('census-tract-dropdown', 'value')
+     Input('masterfile_data', 'data')
     ]
 )
-def update_map(selected_place, selected_year, selected_tract):
-    fig = rent_chloropleth_map(selected_place, selected_year)
-
-    if selected_tract is not None:
-        fig_aux = census_tract_trace(selected_place, selected_year, selected_tract)
-        fig.add_trace(fig_aux.data[0])
-
-    return fig
 
 # Plot
 @app.callback(
