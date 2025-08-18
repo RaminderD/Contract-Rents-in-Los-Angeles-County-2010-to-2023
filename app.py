@@ -590,7 +590,7 @@ app.clientside_callback(
         var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['YEAR'] === selected_year);
         
         var place_string = selected_place.replaceAll(' ','');
-        var url_path = `https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County/blob/main/assets/${selected_year}/contract_rent_mastergeometry_${selected_year}_${place_string}.json?raw=true`;
+        var url_path = "https://github.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/as" + `sets/${selected_year}/contract_rent_mastergeometry_${selected_year}_${place_string}.json";
 
         var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['YEAR'] === selected_year);
         
