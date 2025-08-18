@@ -598,7 +598,7 @@ app.clientside_callback(
         return `<b>Median Contract Rents</b> in <b>${selected_place}</b> by Census Tract, <b>${selected_year}</b>`;
     }
     """,
-    Output('map-title', 'html'),
+    Output('map-title', 'children'),
     [Input('place-dropdown', 'value'),
      Input('year-dropdown', 'value')
     ]
@@ -615,7 +615,7 @@ app.clientside_callback(
         }
     }
     """,
-    Output('plot-title', 'html'),
+    Output('plot-title', 'children'),
     [Input('place-dropdown', 'value'),
      Input('census-tract-dropdown', 'value')
     ]
