@@ -474,7 +474,7 @@ app.layout = dbc.Container([
             ]),
             dbc.Col([
                 dbc.Card([
-                    dbc.CardHeader(children = html.Div(Purify(id = "plot-title")),
+                    dbc.CardHeader(children = html.B(id = "plot-title"),
                                    style = {'background-color': Teal_color,
                                             'color': '#FFFFFF'}
                                   ),
@@ -596,7 +596,7 @@ app.clientside_callback(
 app.clientside_callback(
     """
     function(selected_place, selected_year) {
-        return selected_place, selected_year;
+        return [`${selected_place}`, `${selected_year}`];
     }
     """,
     Output('map-title1', 'children'),
@@ -612,13 +612,13 @@ app.clientside_callback(
     """
     function(selected_place, selected_tract) {
         if (selected_tract == undefined){
-            return `<b>Please click on a tract.</b>`;
+            return "Please click on a tract.";
         } else {
-            return `${selected_place}, <b>${selected_tract}</b>`;
+            return `${selected_place}, ${selected_tract}`;
         }
     }
     """,
-    Output('plot-title', 'html'),
+    Output('plot-title', 'children'),
     [Input('place-dropdown', 'value'),
      Input('census-tract-dropdown', 'value')
     ]
