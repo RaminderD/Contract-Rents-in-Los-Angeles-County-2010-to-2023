@@ -101,12 +101,6 @@ for year in years:
 
 # ------------ UTILITY FUNCTIONS ------------ #
 
-# Function for returning the FIPS code corresponding to the place name
-path = assets_path + "LosAngelesCounty_2020_FIPS.csv"
-LosAngelesCounty_2020_FIPS = pd.read_csv(path)
-LosAngelesCounty_dict = LosAngelesCounty_2020_FIPS.set_index('PLACE_FIPS')['PLACENAME'].to_dict()
-
-
 
 # Function for creating a dictionary where the places (keys) hold lists of dictionaries for our year dropdown
 def place_year_dictionary():
@@ -146,34 +140,6 @@ def tract_dataframe(place, tract):
 
     return tract_data
 
-
-# ------------ CENSUS TRACT TRACE MAP FUNCTION ------------ #
-
-# Credit: 
-# https://stackoverflow.com/a/79144703
-
-def census_tract_trace(place, year, census_tract):
-    df = stratified_file_dict[year][place]
-    df = df[df.NAME == census_tract]
-    place_string = place.replace(" ", "")
-    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/{year}/contract_rent_mastergeometry_{year}_{place_string}.json'
-
-    fig_aux = go.Figure()
-
-    fig_aux.add_trace(
-        go.Choroplethmap(geojson      = url_path,
-                         featureidkey = 'properties.GEO_ID',
-                         locations    = df['GEO_ID'],
-                         z            = df['dummy'],
-                         zmax = 1, zmin = 0,
-                         colorscale   = [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0)']], # Colors with alpha channel, both fully transparent
-                         showscale    = False,
-                         marker       = {'line_color': '#04D9FF', 'line_width': 4},
-                         hoverinfo    = 'skip',  # Hide hover info so you still get the main figure's one
-                        )
-    )
-
-    return fig_aux
 
 # ------------ CENSUS TRACT PLOT FUNCTION ------------ #
 def census_tract_plot(place, census_tract):
@@ -596,6 +562,7 @@ app.clientside_callback(
         
         var locations_array = my_array.map(({GEO_ID}) => GEO_ID);
         var z_array = my_array.map(({B25058_001E})=>B25058_001E);
+        var customdata_array = my_array.map(({NAME}) => NAME);
         
         var long_array = my_array.map(({INTPTLON})=>INTPTLON);
         var long_center = long_array.reduce((a, b) => a + b) / long_array.length;
@@ -614,8 +581,9 @@ app.clientside_callback(
     
     
     
-        var data = [{
+        var main_data = [{
             'type': 'choroplethmap',
+            'customdata': customdata_array,
             'geojson': url_path,
             'locations': locations_array,
             'featureidkey': 'properties.GEO_ID',
@@ -636,18 +604,38 @@ app.clientside_callback(
         var layout = {
             'autosize': true,
             'hoverlabel': {'align': 'left'},
-            'map': {'center': {'lat': lat_center, 'lon': lon_center}, 'style': 'streets', 'zoom': 10.5},
+            'map': {'center': {'lat': lat_center, 'lon': lon_center}, 'style': 'streets', 'zoom': 10},
             'margin': {'b': 0, 'l': 0, 'r': 0, 't': 0},
             'paper_bgcolor': '#FEF9F3',
             'plot_bgcolor': '#FEF9F3',
         };
-    
-        return {'data': data, 'layout': layout};
+        if (selected_tract != undefined){
+            var aux_array = my_array.filter(item => item['NAME'] === selected_tract);
+            var aux_locations_array = aux_array.map(({GEO_ID}) => GEO_ID);
+            var aux_z_array = aux_array.map(({dummy})=>dummy);
+        
+            var data_aux = {
+                'type': 'choroplethmap',
+                'geojson': url_path,
+                'locations': aux_locations_array,
+                'featureidkey': 'properties.GEO_ID',
+                'colorscale': `[[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0)']]`,
+                'showscale': false,
+                'z': aux_z_array,
+                'zmin': 0, 'zmax': 1,
+                'marker': {'line': {'color': '#04D9FF', 'width': 4}},
+                'hoverinfo': 'skip',
+            }
+            main_data.push(data_aux);
+        }
+
+        return {'data': main_data, 'layout': layout}
     }
     """,
     Output('chloropleth_map', 'figure'),
     [Input('place-dropdown', 'value'),
      Input('year-dropdown', 'value'),
+     Input('census-tract-dropdown', 'value'),
      Input('masterfile_data', 'data')
     ]
 )
