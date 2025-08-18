@@ -146,65 +146,6 @@ def tract_dataframe(place, tract):
 
     return tract_data
 
-# ------------ GEOSPATIAL CHLOROPLETH MAP FUNCTION ------------ #
-def rent_chloropleth_map(place, year):
-    df = stratified_file_dict[year][place]
-    center_lat = round(df.INTPTLAT.mean(), 5)
-    center_lon = round(df.INTPTLON.mean(), 5)
-    place_string = place.replace(" ", "")
-    url_path = f'https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/assets/{year}/contract_rent_mastergeometry_{year}_{place_string}.json'
-    
-    hovertext = """
-<b style='font-size:16px;'>%{customdata[2]}</b><br>
-%{customdata[1]}, Los Angeles County <br><br>
-Median Contract Rent (%{customdata[0]}): <br> <b style='color:#800000; font-size:14px;'>%{customdata[4]}</b> <br><br>
-25th Percentile Contract Rent (%{customdata[0]}): <br> <b style='color:#B22222; font-size:14px;'>%{customdata[5]}</b> <br><br>
-75th Percentile Contract Rent (%{customdata[0]}): <br> <b style='color:#B22222; font-size:14px;'>%{customdata[6]}</b>
-<extra></extra>
-    """
-        
-    fig = go.Figure()
-    
-    fig.add_trace(
-        go.Choroplethmap(geojson      = url_path,
-                         customdata   = df[['YEAR', 'PLACE', 'NAME', 'B25058_001E', 'Median', '25th', '75th']],
-                         locations    = df['GEO_ID'],
-                         featureidkey = 'properties.GEO_ID',
-                         colorscale   = "YlOrRd",
-                         z = df['B25058_001E'],
-                         zmin = 0, zmax = 3500,
-                         colorbar = {'title': 'Median Contract<br>Rents ($)',
-                                     'title_font_color': '#020403',
-                                     'title_font_weight': 500,
-                                     'tickprefix': '$',
-                                     'ticklabelposition': 'outside bottom',
-                                     'outlinewidth': 2,
-                                    },
-                         marker = {'opacity': 0.4,
-                                   'line_color': '#020403',
-                                   'line_width': 1.75,
-                                  },
-                         hoverlabel = {'bgcolor': '#FAFAFA',     # Very light gray
-                                       'bordercolor': '#BEBEBE', # Light gray
-                                       'font': {'color': '#020403'}
-                                      },
-                         hovertemplate = hovertext,
-                        )
-    )
-    
-    fig.update_layout(map_style  = "streets",
-                      map_center = {"lat": center_lat, "lon": center_lon},
-                      map_zoom   = 10.5,
-                      hoverlabel_align = 'left',
-                      margin     = {'l': 0, 'r': 0, 't': 0, 'b': 0},
-                      autosize   = True,
-                      uirevision = True,
-                      paper_bgcolor = '#FEF9F3',
-                      plot_bgcolor  = '#FEF9F3',
-                     )
-
-    return fig
-
 
 # ------------ CENSUS TRACT TRACE MAP FUNCTION ------------ #
 
