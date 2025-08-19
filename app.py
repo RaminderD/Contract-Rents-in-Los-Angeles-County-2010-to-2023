@@ -65,8 +65,8 @@ for year in years:
     masterfile = pd.concat([masterfile, df], ignore_index = True)
 
 
-# ------------ UTILITY FUNCTIONS ------------ #
 
+# ------------ UTILITY FUNCTIONS ------------ #
 
 # Function for creating a dictionary where the places (keys) hold lists of dictionaries for our year dropdown
 def place_year_dictionary():
@@ -153,6 +153,7 @@ Raminder Singh Dubb <br>
 
 © 2025 Raminder Singh Dubb
 """
+
 
 # ------------ Initialization ------------ #
 place_year_dict = place_year_dictionary()
