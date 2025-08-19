@@ -21,59 +21,7 @@ assets_path = "assets/"
 
 data_path = "masterfiles/"
 
-
-# Create a stratified dictionary for masterfiles, indexed by year and place in that order
-stratified_file_dict = dict()
-years = range(2010, 2024)
-
-for year in years:
-    file_path = f'{data_path}contract_rent_masterfile_{year}.csv'
-    df = pd.read_csv(file_path)
-    map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
-    gdf = gpd.read_file(map_path)
-    df = pd.merge(df, gdf[['GEO_ID','INTPTLAT','INTPTLON']], on='GEO_ID', how='left')
-
-    # For the trace
-    df['dummy'] = 1
-
-    # This is done because the ACS data caps values at $3501 (for data years
-    # after 2014) and $2001 (for data years 2014 and prior). Thus, if a certain
-    # metric indicates that number, it means the selected metric is obviously much
-    # higher.
-
-    # cc. Example: https://data.census.gov/table/ACSDT5Y2015.B25061?q=Renter+Costs&g=160XX00US0643000$1400000
-    # Compare the highest price bin in 2023 ('$3500 or more') to the highest price
-    # bin in 2014 ('$2000 or more') or any year prior to 2014 for that matter.
-
-    # As a side, it appears that max price was revised up from $2000 to $3500,
-    # corresponding to the transition from 2014 to 2015. This possibly reflects
-    # the sentiment that ACS data would not adequately capture the entire spectrum
-    # of variation in rents especially as they occur along the higher end of the spectrum.
-    # Nonetheless, it is curious as to why ACS data does not display or provide higher price bins
-    # for data years prior to 2014.
-    
-    df['B25058_001E_copy'] = df['B25058_001E']
-    df['Median'] = df['B25058_001E_copy']
-    df['75th'] = df['B25059_001E']
-    df['25th'] = df['B25057_001E']
-    columns = ['Median', '75th', '25th']
-    for col in columns:
-        df[col] = '$' + df[col].astype(str)
-        df[col] = df[col].str.replace('.0', '')
-        df.loc[df[col] == '$3501', col] = 'Not available. Exceeds $3500!'
-        df.loc[df[col] == '$nan', col] = 'Not Available!'
-        if year in [2010, 2011, 2012, 2013, 2014]:
-            df.loc[df[col] == '$2001', col] = 'Not available. Exceeds $2000!'
-    
-    dummy_dict = dict()
-    places = df['PLACE'].unique().tolist()
-    for place in places:
-        mask = df['PLACE'] == place
-        dummy_dict[place] = df[mask]
-
-    stratified_file_dict[year] = deepcopy(dummy_dict)
-
-# ------------ MASTERFILE FOR DCC.STORE() ------------ #
+# -- Masterfile -- #
 masterfile = pd.DataFrame()
 years = range(2010, 2024)
 
