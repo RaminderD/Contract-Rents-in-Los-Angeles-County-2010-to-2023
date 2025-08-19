@@ -31,7 +31,25 @@ for year in years:
     map_path = f'{assets_path}contract_rent_mastergeometry_{year}.json'
     gdf = gpd.read_file(map_path)
     df = pd.merge(df, gdf[['GEO_ID','INTPTLAT','INTPTLON']], on='GEO_ID', how='left')
+
+    # For the trace
     df['dummy'] = 1
+
+    # This is done because the ACS data caps values at $3501 (for data years
+    # after 2014) and $2001 (for data years 2014 and prior). Thus, if a certain
+    # metric indicates that number, it means the selected metric is obviously much
+    # higher.
+
+    # cc. Example: https://data.census.gov/table/ACSDT5Y2015.B25061?q=Renter+Costs&g=160XX00US0643000$1400000
+    # Compare the highest price bin in 2023 ('$3500 or more') to the highest price
+    # bin in 2014 ('$2000 or more') or any year prior to 2014 for that matter.
+
+    # As a side, it appears that max price was revised up from $2000 to $3500,
+    # corresponding to the transition from 2014 to 2015. This possibly reflects
+    # the sentiment that ACS data would not adequately capture the entire spectrum
+    # of variation in rents especially as they occur along the higher end of the spectrum.
+    # Nonetheless, it is curious as to why ACS data does not display or provide higher price bins
+    # for data years prior to 2014.
     df['B25058_001E_copy'] = df['B25058_001E']
     df['Median'] = df['B25058_001E_copy']
     df['75th'] = df['B25059_001E']
