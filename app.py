@@ -129,9 +129,9 @@ and 75th percentile contract rents for the selected census tract.
    <blockquote> <q> ...the monthly rent agreed to or contracted for, regardless of any furnishings, utilities, fees, meals, or services that may be included.</q> (Chapter 6) </blockquote>
 
    Thus, <ul>
-   <li> The <b style='color:#800000;'>median contract rent</b> represents contract rent where 50% of all contract rents in a census tract are lower than this median, </li>
-   <li> The <b style='color:#B22222;'>25% percentile contract rent</b> represents contract rent where 25% of all contract rents in a census tract are lower than this 25th percentile</li>
-   <li> The <b style='color:#B22222;'>75% percentile contract rent</b> represents contract rent where 75% of all contract rents in a census tract are lower than this 75th percentile</li>
+   <li> The <b style='color:#800000;'>median contract rent</b> represents the contract rent where <b style='color:#800000;'>50% of all contract rents in a census tract are lower than this median</b></li>
+   <li> The <b style='color:#B22222;'>25th percentile contract rent</b> represents the contract rent where <b style='color:#B22222;'>25% of all contract rents in a census tract are lower than this 25th percentile</b></li>
+   <li> The <b style='color:#B22222;'>75th percentile contract rent</b> represents the contract rent where <b style='color:#B22222;'>75% of all contract rents in a census tract are lower than this 75th percentile</b></li>
    </ul>
 
 2. Data for contract rents were taken from the United States Census Bureau <u style='color:#800000;'><a href="https://www.census.gov/programs-surveys/acs.html" style="color:#800000;">American Community Survey</a></u> (ACS codes B25057, B25058, and B25059).
