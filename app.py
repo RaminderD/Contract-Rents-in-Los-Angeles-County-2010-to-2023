@@ -605,7 +605,7 @@ app.clientside_callback(
                 'paper_bgcolor': '#FEF9F3',
                 'plot_bgcolor': '#FEF9F3',
                 'title': {'text': `Median Contract Rents, ${Math.min(...x_array)} to ${Math.max(...x_array)}`, 'x': 0.05},
-                'xaxis': {'title': {'text': 'Year', 'ticklabelstandoff': 10}, 'showgrid': false},
+                'xaxis': {'title': {'text': 'Year', 'ticklabelstandoff': 10}, 'showgrid': false, 'tickvals': x_array},
                 'yaxis': {'title': {'text': 'Median Contract Rents ($)', 'standoff': 15}, 'tickprefix': '$', 'gridcolor': '#E0E0E0', 'ticklabelstandoff': 5},
             };
             
