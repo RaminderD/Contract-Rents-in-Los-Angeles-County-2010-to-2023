@@ -577,9 +577,9 @@ app.clientside_callback(
     
             var strings = my_array.map(function(item) {
                 return "<b style='font-size:16px;'>" + item['YEAR'] + "</b><br>" + item['NAME'] + ", " + item['PLACE'] + " <br><br>" +
-                "Median Contract Rent: <br> <b style='color:#800000; font-size:14px;'>" + item['Median'] + "</b> <br><br>" +
-                "25th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>" + item['25th'] + "</b> <br><br>" +
-                "75th Percentile Contract Rent: <br> <b style='color:#B22222; font-size:14px;'>" + item['75th'] + "</b> <br><br><extra></extra>";
+                "Median Contract Rent: <br><b style='color:#800000; font-size:14px;'>" + item['Median'] + "</b> <br><br>" +
+                "25th Percentile Contract Rent: <br><b style='color:#B22222; font-size:14px;'>" + item['25th'] + "</b> <br><br>" +
+                "75th Percentile Contract Rent: <br><b style='color:#B22222; font-size:14px;'>" + item['75th'] + "</b> <br><br><extra></extra>";
                 });
         
         
