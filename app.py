@@ -62,6 +62,8 @@ for year in years:
         df.loc[df[col] == '$nan', col] = 'Not Available!'
         if year in [2010, 2011, 2012, 2013, 2014]:
             df.loc[df[col] == '$2001', col] = 'Not available. Exceeds $2000!'
+    df = df[['YEAR', 'PLACE', 'GEO_ID', 'NAME', 'B25058_001E', 'INTPTLAT', 'INTPTLON', 'dummy',
+             'Median', '75th', '25th']]
     masterfile = pd.concat([masterfile, df], ignore_index = True)
 
 
