@@ -444,11 +444,13 @@ app.clientside_callback(
         var selected_place = `${selected_place}`;
         var selected_year = Number(selected_year);
         var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['YEAR'] === selected_year);
+        if ( selected_place.includes("Flintridge") ) {
+           var selected_place = 'La Ca' + \u00f1 + 'ada Flintridge';
+           return selected_place;
+        }
         
         var place_string = selected_place.replaceAll(' ','');
         var url_path = "https://raw.githubusercontent.com/ramindersinghdubb/Contract-Rents-in-LA-County/refs/heads/main/as" + "sets/" + selected_year + "/contract_rent_mastergeometry_" + selected_year + "_" + place_string + ".json";
-
-        var my_array = masterfile_data.filter(item => item['PLACE'] === selected_place && item['YEAR'] === selected_year);
         
         var locations_array = my_array.map(({GEO_ID}) => GEO_ID);
         var z_array = my_array.map(({B25058_001E})=>B25058_001E);
